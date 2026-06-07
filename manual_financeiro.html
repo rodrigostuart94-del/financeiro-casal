@@ -1,0 +1,1001 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manual Financeiro · Rodrigo & Esther</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eef1f7;
+  --bg2:#e4eaf3;
+  --surface:#fbfcfe;
+  --surface2:#f1f4fa;
+  --ink:#16202e;
+  --ink-soft:#46536a;
+  --muted:#8893a3;
+  --line:#dce3ee;
+  --line-soft:#e8edf5;
+  --blue:#1f5793;
+  --blue-d:#143d6b;
+  --gold:#b08a3e;
+  --gold-soft:#cdb074;
+  --positive:#2f7a52;
+  --warning:#bd812a;
+  --critical:#b14536;
+  --crit-bg:#f7e7e2;
+  --warn-bg:#f7eed8;
+  --pos-bg:#e3efe6;
+  --shadow:0 1px 2px rgba(20,40,70,.05),0 8px 28px -12px rgba(20,40,70,.20);
+  --shadow-lg:0 30px 70px -30px rgba(20,61,107,.35);
+  --r:18px;
+  --r-sm:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:
+    radial-gradient(1200px 600px at 100% -10%,rgba(176,138,62,.10),transparent 55%),
+    radial-gradient(900px 700px at -10% 110%,rgba(31,87,147,.12),transparent 50%),
+    var(--bg);
+  color:var(--ink);
+  font-family:"Manrope",sans-serif;
+  font-size:15px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+h1,h2,h3,h4{font-family:"Fraunces",serif;font-weight:500;line-height:1.12;letter-spacing:-.01em}
+.serif{font-family:"Fraunces",serif}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select{font-family:inherit;font-size:14px}
+
+/* ---------- LAYOUT ---------- */
+.app{display:grid;grid-template-columns:260px 1fr;min-height:100vh}
+.sidebar{
+  position:sticky;top:0;height:100vh;
+  background:linear-gradient(180deg,var(--blue),var(--blue-d));
+  color:#e9ecdf;padding:26px 18px;display:flex;flex-direction:column;gap:4px;
+  overflow-y:auto;z-index:20;
+}
+.brand{padding:4px 10px 22px;border-bottom:1px solid rgba(255,255,255,.12);margin-bottom:14px}
+.brand .mark{font-family:"Fraunces",serif;font-size:13px;letter-spacing:.32em;text-transform:uppercase;color:var(--gold-soft);font-weight:600}
+.brand h1{font-size:25px;color:#fff;margin-top:6px;font-weight:500}
+.brand p{font-size:12px;color:rgba(233,236,223,.6);margin-top:5px}
+.nav-group{font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:rgba(205,176,116,.7);padding:16px 10px 6px;font-weight:700}
+.nav-item{
+  display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:11px;
+  color:rgba(233,236,223,.82);font-size:13.5px;font-weight:500;width:100%;text-align:left;
+  transition:background .15s,color .15s;
+}
+.nav-item:hover{background:rgba(255,255,255,.07);color:#fff}
+.nav-item.active{background:rgba(255,255,255,.13);color:#fff;font-weight:600}
+.nav-item .ic{width:17px;height:17px;flex:none;opacity:.9}
+.nav-item .num{margin-left:auto;font-size:10px;opacity:.45;font-variant-numeric:tabular-nums}
+
+.main{min-width:0;display:flex;flex-direction:column}
+.topbar{
+  position:sticky;top:0;z-index:15;backdrop-filter:blur(10px);
+  background:rgba(241,237,228,.82);border-bottom:1px solid var(--line);
+  padding:16px 38px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+}
+.topbar .crumb{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.topbar h2{font-size:22px;margin-top:1px}
+.topbar .right{margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:999px;font-size:12.5px;font-weight:600;background:var(--surface);border:1px solid var(--line);color:var(--ink-soft)}
+.pill b{color:var(--ink)}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 15px;border-radius:11px;font-size:13px;font-weight:600;background:var(--blue);color:#fff;transition:transform .1s,filter .15s}
+.btn:hover{filter:brightness(1.08)}.btn:active{transform:scale(.97)}
+.btn.ghost{background:var(--surface);color:var(--ink-soft);border:1px solid var(--line)}
+.btn.ghost:hover{filter:none;border-color:var(--gold-soft)}
+.btn.sm{padding:6px 11px;font-size:12px;border-radius:9px}
+
+.content{padding:30px 38px 70px;max-width:1180px;width:100%}
+.view{display:none;animation:fade .45s ease}
+.view.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+.perfil-switch{display:inline-flex;background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:4px;gap:3px}
+.perfil-switch button{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:9px;font-size:12.5px;font-weight:700;color:var(--ink-soft);transition:.15s}
+.perfil-switch button:hover{color:var(--ink)}
+.perfil-switch button.active{background:#fff;box-shadow:var(--shadow);color:var(--ink)}
+.perfil-switch .dot{width:9px;height:9px}
+.banner{display:flex;align-items:center;gap:11px;background:var(--surface2);border:1px dashed var(--line);border-radius:13px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:var(--ink-soft)}
+.banner b{color:var(--ink)}
+.banner svg{flex:none;color:var(--gold)}
+.menu-toggle{display:none}
+
+/* ---------- CARDS / GRID ---------- */
+.grid{display:grid;gap:18px}
+.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:22px;box-shadow:var(--shadow)}
+.card.tight{padding:18px}
+.card-h{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.card-h h3{font-size:18px}
+.card-h .tag{margin-left:auto;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.section-intro{margin-bottom:24px;max-width:760px}
+.section-intro h2{font-size:30px;margin-bottom:8px}
+.section-intro p{color:var(--ink-soft);font-size:14.5px}
+
+/* KPI */
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.kpi .lbl{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.kpi .val{font-family:"Fraunces",serif;font-size:30px;margin-top:8px;font-variant-numeric:tabular-nums;line-height:1}
+.kpi .sub{font-size:12.5px;color:var(--ink-soft);margin-top:7px}
+.kpi .corner{position:absolute;top:14px;right:16px;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--surface2)}
+.kpi.accent{background:linear-gradient(160deg,var(--blue),var(--blue-d));color:#fff;border:none}
+.kpi.accent .lbl{color:var(--gold-soft)}.kpi.accent .sub{color:rgba(255,255,255,.7)}
+.kpi.accent .corner{background:rgba(255,255,255,.12)}
+
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:11.5px;font-weight:700}
+.chip.exc{background:var(--pos-bg);color:var(--positive)}
+.chip.boa{background:#e3ecf7;color:var(--blue)}
+.chip.aten{background:var(--warn-bg);color:var(--warning)}
+.chip.crit{background:var(--crit-bg);color:var(--critical)}
+.up{color:var(--positive)}.down{color:var(--critical)}
+
+/* progress */
+.bar{height:9px;border-radius:99px;background:var(--line-soft);overflow:hidden}
+.bar > span{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--blue),var(--gold));transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.bar.gold>span{background:linear-gradient(90deg,var(--gold),var(--gold-soft))}
+.bar.crit>span{background:linear-gradient(90deg,var(--critical),#d8775f)}
+
+/* table */
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:0 12px 10px}
+td{padding:11px 12px;border-top:1px solid var(--line-soft);font-size:13.5px;vertical-align:middle}
+tr:hover td{background:var(--surface2)}
+.num-cell{font-variant-numeric:tabular-nums;text-align:right;font-weight:600}
+.who{display:inline-flex;align-items:center;gap:7px;font-weight:600;font-size:12.5px}
+.dot{width:9px;height:9px;border-radius:99px;flex:none}
+.dot.r{background:var(--blue)}.dot.e{background:var(--gold)}.dot.c{background:#7d8a82}
+
+/* forms */
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.field input,.field select{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);width:100%}
+.field input:focus,.field select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(31,87,147,.15)}
+.form-row{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));align-items:end}
+
+.icon-btn{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;color:var(--muted);transition:.15s}
+.icon-btn:hover{background:var(--crit-bg);color:var(--critical)}
+
+/* alerts */
+.alert{display:flex;gap:13px;padding:15px 17px;border-radius:14px;border:1px solid;margin-bottom:11px;align-items:flex-start}
+.alert .ai{width:34px;height:34px;border-radius:9px;flex:none;display:grid;place-items:center}
+.alert.crit{background:var(--crit-bg);border-color:#ecc6bd}.alert.crit .ai{background:#eab9ac;color:var(--critical)}
+.alert.aten{background:var(--warn-bg);border-color:#ecd9aa}.alert.aten .ai{background:#e8cf91;color:var(--warning)}
+.alert.pos{background:var(--pos-bg);border-color:#bcd9c5}.alert.pos .ai{background:#aed0ba;color:var(--positive)}
+.alert h4{font-family:"Manrope";font-size:14px;font-weight:700;margin-bottom:2px}
+.alert p{font-size:13px;color:var(--ink-soft)}
+
+/* donut */
+.donut-wrap{display:flex;align-items:center;gap:26px;flex-wrap:wrap}
+.legend{display:flex;flex-direction:column;gap:11px;flex:1;min-width:170px}
+.legend-row{display:flex;align-items:center;gap:10px;font-size:13.5px}
+.legend-row .sw{width:13px;height:13px;border-radius:4px;flex:none}
+.legend-row .lp{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
+
+.scenario-tabs{display:inline-flex;background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:4px;gap:3px}
+.scenario-tabs button{padding:8px 16px;border-radius:9px;font-size:13px;font-weight:600;color:var(--ink-soft)}
+.scenario-tabs button.active{background:var(--blue);color:#fff}
+
+.rule{display:flex;gap:12px;padding:14px 16px;border-radius:13px;background:var(--surface2);border:1px solid var(--line-soft);align-items:center}
+.rule .n{font-family:"Fraunces",serif;font-size:20px;color:var(--gold);flex:none;width:30px}
+.rule p{font-size:13.5px;font-weight:500}
+
+.stat-line{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px dashed var(--line-soft);font-size:13.5px}
+.stat-line:last-child{border:none}
+.stat-line b{font-variant-numeric:tabular-nums}
+
+.gauge{position:relative;width:200px;height:120px;margin:0 auto}
+.disclaimer{font-size:12px;color:var(--muted);background:var(--surface2);border:1px dashed var(--line);border-radius:12px;padding:13px 15px;line-height:1.5}
+.empty{text-align:center;padding:30px;color:var(--muted);font-size:13.5px}
+
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{padding:7px 13px;font-size:12.5px;font-weight:600;color:var(--ink-soft)}
+.seg button.active{background:var(--blue);color:#fff}
+
+@media(max-width:920px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:fixed;left:0;top:0;width:262px;transform:translateX(-100%);transition:transform .3s;box-shadow:var(--shadow-lg)}
+  .sidebar.open{transform:none}
+  .menu-toggle{display:grid;place-items:center;width:38px;height:38px;border-radius:10px;background:var(--surface);border:1px solid var(--line)}
+  .content,.topbar{padding-left:18px;padding-right:18px}
+  .g2,.g3,.g4{grid-template-columns:1fr}
+  .scrim{display:none;position:fixed;inset:0;background:rgba(20,61,107,.38);z-index:18}
+  .scrim.show{display:block}
+  #rendaPill{display:none}
+  .perfil-switch button{padding:6px 9px;font-size:11.5px}
+}
+@media(min-width:921px){.scrim{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="mark">Patrimônio · Família</div>
+      <h1>Rodrigo &amp; Esther</h1>
+      <p>Manual de Gestão Financeira e Investimentos</p>
+    </div>
+    <nav id="nav"></nav>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+
+  <div class="main">
+    <div class="topbar">
+      <button class="menu-toggle" id="menuToggle" aria-label="menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+      <div>
+        <div class="crumb" id="crumb">Diagnóstico</div>
+        <h2 id="viewTitle">Diagnóstico Financeiro</h2>
+      </div>
+      <div class="right">
+        <div class="perfil-switch" id="perfilSwitch"></div>
+        <span class="pill" id="rendaPill">Renda · <b id="topRenda">R$ 0</b></span>
+        <button class="btn ghost sm" id="resetBtn">Limpar dados</button>
+      </div>
+    </div>
+    <div class="content" id="content"></div>
+  </div>
+</div>
+
+<script>
+/* ============================ HELPERS ============================ */
+const $ = s => document.querySelector(s);
+const BRL = n => 'R$ ' + Math.round(n||0).toLocaleString('pt-BR');
+const BRLk = n => 'R$ ' + (n||0).toLocaleString('pt-BR',{maximumFractionDigits:0});
+const PCT = (n,d=1) => (n||0).toLocaleString('pt-BR',{maximumFractionDigits:d})+'%';
+const uid = () => Math.random().toString(36).slice(2,9);
+const MNAMES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const mLabel = k => { const [y,m]=k.split('-'); return MNAMES[+m-1]+'/'+y; };
+const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+
+/* ============================ SEED / STATE ============================ */
+function seed(){
+  const now=new Date();
+  const cm=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  return {
+    profile:{rodrigo:{nome:'Rodrigo Machado',idade:32,prolabore:5000},esther:{nome:'Esther Maggessi',idade:29,renda:5000}},
+    patrimonio:{investido:0,conta:0,dividas:0},
+    receitas:[], despesas:[],
+    metas:[],
+    viagens:[],
+    qualidade:{Lazer:0,Restaurantes:0,Passeios:0,Academia:0,'Saúde / bem-estar':0,'Desenvolvimento pessoal':0},
+    invest:{taxaAnual:11,dyMedio:9,alocacao:{rf:50,fii:20,acoes:20,oport:10}},
+    reservaMeta:6,
+    config:{mesAtual:cm}
+  };
+}
+const KEY='manual_fin_rodrigo_esther_v1';
+let S;
+try{ S = JSON.parse(localStorage.getItem(KEY)) || seed(); }catch(e){ S = seed(); }
+function save(){ try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){} }
+function reset(){ if(confirm('Apagar todos os dados e recomeçar do zero?')){ S=seed(); save(); render(); } }
+
+/* ============================ CÁLCULOS ============================ */
+function months(){ return [...new Set([...S.receitas,...S.despesas].map(x=>x.mes))].sort(); }
+function curMonth(){ return S.config.mesAtual; }
+function recMes(m){ return S.receitas.filter(r=>r.mes===m).reduce((a,b)=>a+b.valor,0); }
+function despMes(m,dono){ return S.despesas.filter(d=>d.mes===m&&(!dono||d.dono===dono)).reduce((a,b)=>a+b.valor,0); }
+function recPessoaMes(m,p){ return S.receitas.filter(r=>r.mes===m&&r.pessoa===p).reduce((a,b)=>a+b.valor,0); }
+function mediaDespesa(){ const ms=months(); if(!ms.length)return 0; return ms.reduce((a,m)=>a+despMes(m),0)/ms.length; }
+function patrimonioLiq(){ return S.patrimonio.investido + S.patrimonio.conta - S.patrimonio.dividas; }
+function taxaPoupanca(m){ const r=recMes(m); return r? (r-despMes(m))/r : 0; }
+function sobraMes(m){ return recMes(m)-despMes(m); }
+
+/* ---- perfil individual / casal ---- */
+function perfil(){ return S.config.perfil || 'casal'; }
+function pNome(p){ return p==='rodrigo'?(S.profile.rodrigo.nome.split(' ')[0]):p==='esther'?(S.profile.esther.nome.split(' ')[0]):'Casal'; }
+function rateio(){ return S.config.rateio || 'igual'; }
+function shareCasal(m,p){ const tot=despMes(m,'casal'); if(rateio()==='renda'){ const rc=recMes(m); return rc>0?tot*(recPessoaMes(m,p)/rc):tot/2; } return tot/2; }
+function despIndiv(m,p){ return despMes(m,p)+shareCasal(m,p); }
+function sobraIndiv(m,p){ return recPessoaMes(m,p)-despIndiv(m,p); }
+function txPoupIndiv(m,p){ const r=recPessoaMes(m,p); return r? sobraIndiv(m,p)/r : 0; }
+function healthScoreIndiv(p){
+  const m=curMonth(), tx=txPoupIndiv(m,p), ms=months(), prev=ms.filter(x=>x<m);
+  const cPoup=clamp(tx/0.20,0,1)*50;
+  const atualPess=despMes(m,p), histPess=prev.map(pm=>despMes(pm,p)).filter(x=>x>0);
+  let cDisc=15;
+  if(histPess.length){ const avg=histPess.reduce((a,b)=>a+b,0)/histPess.length; const ratio=avg>0?atualPess/avg:1; cDisc=clamp(30*(1.15-ratio)/0.30,0,30); }
+  const r=recPessoaMes(m,p), sob=sobraIndiv(m,p);
+  const cContrib = sob>=0?20:clamp(20*(1+sob/(r||1)),0,20);
+  const total=Math.round(cPoup+cDisc+cContrib);
+  return {total,tx,comp:{'Poupança':cPoup,'Disciplina de gastos':cDisc,'Contribuição':cContrib}};
+}
+
+function fvAporte(pmt, annualPct, years, principal=0){
+  const i=Math.pow(1+annualPct/100,1/12)-1, n=years*12;
+  const fvP = principal*Math.pow(1+i,n);
+  const fvA = i===0? pmt*n : pmt*((Math.pow(1+i,n)-1)/i);
+  return fvP+fvA;
+}
+function dividendosMensais(patrimonio){
+  const share=(S.invest.alocacao.fii+S.invest.alocacao.acoes)/100;
+  return patrimonio*share*(S.invest.dyMedio/100)/12;
+}
+
+function healthScore(){
+  const m=curMonth(); const r=recMes(m); const tx=taxaPoupanca(m);
+  const md=mediaDespesa()||1;
+  const mesesCob = S.patrimonio.conta/md;
+  // componentes
+  const cPoup = clamp(tx/0.20,0,1)*25;
+  const cReserva = clamp(mesesCob/6,0,1)*25;
+  const cInvest = clamp((S.patrimonio.investido/(r*6||1)),0,1)*20;
+  const cDivida = S.patrimonio.dividas===0?20:clamp(20*(1-S.patrimonio.dividas/(r*6||1)),0,20);
+  const cConsist = (S.patrimonio.investido>0?6:0)+(mesesCob>3?4:mesesCob>1?2:0);
+  const total = Math.round(cPoup+cReserva+cInvest+cDivida+cConsist);
+  return {total,comp:{Poupança:cPoup,Reserva:cReserva,Investimento:cInvest,Endividamento:cDivida,'Consistência':cConsist},mesesCob,tx};
+}
+function rating(v){ // v 0-100
+  if(v>=80)return{cls:'exc',t:'Excelente'}; if(v>=60)return{cls:'boa',t:'Boa'};
+  if(v>=40)return{cls:'aten',t:'Atenção'}; return{cls:'crit',t:'Crítica'};
+}
+
+function analisar(pf){
+  const ms=months(); if(ms.length<2) return [];
+  const cur=curMonth(); const prev=ms.filter(x=>x<cur);
+  const alerts=[];
+  const donos = pf? [pf,'casal'] : ['rodrigo','esther','casal'];
+  donos.forEach(dono=>{
+    const cats=[...new Set(S.despesas.filter(d=>d.dono===dono).map(d=>d.cat))];
+    cats.forEach(cat=>{
+      const atual=S.despesas.filter(d=>d.dono===dono&&d.cat===cat&&d.mes===cur).reduce((a,b)=>a+b.valor,0);
+      const hist=prev.map(pm=>S.despesas.filter(d=>d.dono===dono&&d.cat===cat&&d.mes===pm).reduce((a,b)=>a+b.valor,0)).filter(x=>x>0);
+      if(!hist.length||!atual)return;
+      const avg=hist.reduce((a,b)=>a+b,0)/hist.length;
+      const diff=(atual-avg)/avg;
+      const nome = dono==='casal'?'O casal':pNome(dono);
+      if(diff>=0.25) alerts.push({t:'crit',h:`${cat} acima da média`,p:`${nome} gastou ${PCT(diff*100,0)} acima da média em ${cat.toLowerCase()} este mês (${BRL(atual)} vs. ${BRL(avg)} de média).`});
+      else if(diff<=-0.15) alerts.push({t:'pos',h:`Economia em ${cat.toLowerCase()}`,p:`${nome} reduziu ${PCT(Math.abs(diff)*100,0)} dos gastos em ${cat.toLowerCase()} (${BRL(atual)} vs. ${BRL(avg)}).`});
+    });
+  });
+  const tx = pf? txPoupIndiv(cur,pf) : taxaPoupanca(cur);
+  const subj = pf? pNome(pf) : 'Vocês', verb = pf? 'poupou' : 'pouparam';
+  if(tx<0.10) alerts.push({t:'crit',h:'Taxa de poupança baixa',p:`${subj} ${verb} ${PCT(tx*100,0)} da renda este mês — abaixo do mínimo recomendado de 10%.`});
+  else if(tx>=0.20) alerts.push({t:'pos',h:'Excelente taxa de poupança',p:`${subj} ${verb} ${PCT(tx*100,0)} da renda este mês — dentro do cenário agressivo.`});
+  if(!pf){
+    const md=mediaDespesa(); const cob=S.patrimonio.conta/(md||1);
+    if(cob<3&&md>0) alerts.push({t:'aten',h:'Reserva de emergência incompleta',p:`A reserva cobre apenas ${cob.toFixed(1)} meses de despesas. Meta inicial: 6 meses (${BRL(md*6)}).`});
+  }
+  const order={crit:0,aten:1,pos:2};
+  return alerts.sort((a,b)=>order[a.t]-order[b.t]);
+}
+
+/* ============================ MICRO CHARTS ============================ */
+function donut(segs,size=180){
+  const r=62,cx=size/2,cy=size/2,c=2*Math.PI*r; let off=0,parts='';
+  segs.forEach(s=>{ const len=c*s.pct/100;
+    parts+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${s.color}" stroke-width="22" stroke-linecap="round" stroke-dasharray="${len-3} ${c-len+3}" stroke-dashoffset="${-off}" transform="rotate(-90 ${cx} ${cy})"/>`; off+=len; });
+  return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">${parts}
+    <text x="${cx}" y="${cy-4}" text-anchor="middle" font-family="Fraunces" font-size="13" fill="#8a8f84" letter-spacing="1">CARTEIRA</text>
+    <text x="${cx}" y="${cy+18}" text-anchor="middle" font-family="Fraunces" font-size="22" fill="#19251f">100%</text></svg>`;
+}
+function line(vals,w=560,h=120){
+  if(vals.length<2)return'';
+  const max=Math.max(...vals)*1.1,min=Math.min(...vals,0);
+  const X=i=>20+i*(w-40)/(vals.length-1), Y=v=>h-18-((v-min)/(max-min||1))*(h-34);
+  const pts=vals.map((v,i)=>`${X(i)},${Y(v)}`).join(' ');
+  const area=`20,${h-18} `+pts+` ${X(vals.length-1)},${h-18}`;
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none">
+    <defs><linearGradient id="lg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1f5793" stop-opacity=".22"/><stop offset="1" stop-color="#1f5793" stop-opacity="0"/></linearGradient></defs>
+    <polygon points="${area}" fill="url(#lg)"/>
+    <polyline points="${pts}" fill="none" stroke="#1f5793" stroke-width="2.5" stroke-linejoin="round"/>
+    ${vals.map((v,i)=>`<circle cx="${X(i)}" cy="${Y(v)}" r="3.5" fill="#fbfaf5" stroke="#b08a3e" stroke-width="2"/>`).join('')}
+  </svg>`;
+}
+function hbars(items){ const max=Math.max(...items.map(i=>i.v),1);
+  return items.map(i=>`<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span>${i.l}</span><b style="font-variant-numeric:tabular-nums">${BRL(i.v)}</b></div><div class="bar"><span style="width:${i.v/max*100}%;background:${i.c||'linear-gradient(90deg,var(--blue),var(--gold))'}"></span></div></div>`).join('');
+}
+
+/* ============================ VIEWS DEF ============================ */
+const ICON = {
+  diag:'M3 12h4l3 8 4-16 3 8h4', rec:'M12 5v14M5 12l7 7 7-7', desp:'M12 19V5M5 12l7-7 7 7',
+  analise:'M11 3a8 8 0 105.3 14l4.7 4.7M11 7v8M7 11h8', metas:'M12 2a10 10 0 100 20 10 10 0 000-20zm0 5a5 5 0 100 10 5 5 0 000-10zm0 4a1 1 0 100 2 1 1 0 000-2',
+  reserva:'M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5l8-3z', viagem:'M10 19l2-4 7-2 2-2-2-1-3 1-4-5-2 .5L9 9 4 11l1 3z',
+  qualidade:'M12 21s-7-4.5-7-10a4 4 0 017-2.6A4 4 0 0119 11c0 5.5-7 10-7 10z', invest:'M3 17l6-6 4 4 7-8M14 7h6v6',
+  aporte:'M12 3l9 5-9 5-9-5 9-5zM3 13l9 5 9-5M3 17l9 5 9-5', divid:'M19 5L5 19M8 6a2 2 0 11-4 0 2 2 0 014 0zm12 12a2 2 0 11-4 0 2 2 0 014 0z',
+  saude:'M3 12h4l2 5 4-12 2 7h6', regras:'M5 3h14v18l-7-3-7 3V3zM9 9h6M9 13h4', rel:'M14 2H6v20h12V8l-4-6zM14 2v6h4M9 14h6M9 18h6'
+};
+const VIEWS=[
+  {id:'diag',grp:'Visão Geral',lbl:'Diagnóstico',title:'Diagnóstico Financeiro',render:vDiag},
+  {id:'saude',grp:'Visão Geral',lbl:'Saúde Financeira',title:'Painel de Saúde Financeira',render:vSaude},
+  {id:'analise',grp:'Visão Geral',lbl:'Análise Inteligente',title:'Análise Inteligente de Gastos',render:vAnalise},
+  {id:'rec',grp:'Fluxo de Caixa',lbl:'Receitas',title:'Controle de Receitas',render:vRec},
+  {id:'desp',grp:'Fluxo de Caixa',lbl:'Despesas',title:'Controle de Despesas',render:vDesp},
+  {id:'metas',grp:'Planejamento',lbl:'Metas',title:'Metas Financeiras',render:vMetas},
+  {id:'reserva',grp:'Planejamento',lbl:'Reserva de Emergência',title:'Reserva de Emergência',render:vReserva},
+  {id:'viagem',grp:'Planejamento',lbl:'Viagens',title:'Planejamento de Viagens',render:vViagem},
+  {id:'qualidade',grp:'Planejamento',lbl:'Qualidade de Vida',title:'Planejamento de Qualidade de Vida',render:vQual},
+  {id:'invest',grp:'Investimentos',lbl:'Estratégia',title:'Estratégia de Investimentos',render:vInvest},
+  {id:'aporte',grp:'Investimentos',lbl:'Aporte Mensal',title:'Plano de Aporte Mensal',render:vAporte},
+  {id:'divid',grp:'Investimentos',lbl:'Dividendos',title:'Simulador de Dividendos',render:vDivid},
+  {id:'regras',grp:'Rotina',lbl:'Regras do Casal',title:'Regras Financeiras do Casal',render:vRegras},
+  {id:'rel',grp:'Rotina',lbl:'Relatório Mensal',title:'Relatório Mensal',render:vRel},
+];
+let active='diag';
+
+/* ---------- NAV ---------- */
+function buildNav(){
+  let html='',lastGrp='';
+  VIEWS.forEach(v=>{
+    if(v.grp!==lastGrp){ html+=`<div class="nav-group">${v.grp}</div>`; lastGrp=v.grp; }
+    html+=`<button class="nav-item ${v.id===active?'active':''}" data-go="${v.id}">
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="${ICON[v.id]}"/></svg>
+      <span>${v.lbl}</span></button>`;
+  });
+  $('#nav').innerHTML=html;
+}
+const SHARED_VIEWS=['metas','reserva','viagem','qualidade','invest','aporte','divid','regras'];
+function go(id){ active=id; const v=VIEWS.find(x=>x.id===id); const pf=perfil();
+  $('#crumb').textContent=(pf==='casal'?'':pNome(pf)+' · ')+v.grp; $('#viewTitle').textContent=v.title;
+  buildNav(); renderPerfilSwitch();
+  let body=v.render();
+  if(pf!=='casal' && SHARED_VIEWS.includes(id))
+    body=`<div class="banner"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5l8-3z"/></svg><div>Esta é uma <b>área compartilhada do casal</b> — os valores são da família e não mudam com o perfil selecionado.</div></div>`+body;
+  $('#content').innerHTML=`<div class="view active">${body}</div>`;
+  window.scrollTo(0,0); $('#sidebar').classList.remove('open'); $('#scrim').classList.remove('show');
+  renderRendaPill();
+  attachViewEvents();
+}
+function renderPerfilSwitch(){
+  const pf=perfil();
+  $('#perfilSwitch').innerHTML=[['rodrigo','r'],['esther','e'],['casal','c']].map(([k,d])=>
+    `<button class="${pf===k?'active':''}" data-perfil="${k}"><span class="dot ${d}"></span>${pNome(k)}</button>`).join('');
+  $('#perfilSwitch').querySelectorAll('[data-perfil]').forEach(b=>b.onclick=()=>{S.config.perfil=b.dataset.perfil;save();render();});
+}
+function renderRendaPill(){
+  const pf=perfil(), m=curMonth();
+  let val,lbl;
+  if(pf==='casal'){lbl='Renda do casal';val=recMes(m)||(S.profile.rodrigo.prolabore+S.profile.esther.renda);}
+  else{lbl='Renda · '+pNome(pf);val=recPessoaMes(m,pf)||(pf==='rodrigo'?S.profile.rodrigo.prolabore:S.profile.esther.renda);}
+  $('#rendaPill').innerHTML=`${lbl} · <b id="topRenda">${BRL(val)}</b>`;
+}
+function render(){ go(active); }
+
+/* ============================ VIEW: DIAGNÓSTICO ============================ */
+function vDiag(){
+  const pf=perfil(); if(pf!=='casal') return vDiagIndiv(pf);
+  const m=curMonth(),r=recMes(m),d=despMes(m),sobra=r-d,tx=taxaPoupanca(m);
+  const hs=healthScore(),rt=rating(hs.total);
+  const md=mediaDespesa(),cob=S.patrimonio.conta/(md||1);
+  const liq=clamp(cob/6,0,1)*100;
+  const ms=months(); const evol=ms.map(mm=>0); let acc=patrimonioLiq()-ms.slice().reverse().reduce((a,mm)=>a+sobraMes(mm),0);
+  const evolVals=[]; let run=patrimonioLiq()-ms.reduce((a,mm)=>a+sobraMes(mm),0); ms.forEach(mm=>{run+=sobraMes(mm);evolVals.push(run);});
+  const ind=[
+    {l:'Patrimônio líquido',v:BRL(patrimonioLiq()),s:'Investido + caixa − dívidas',a:true},
+    {l:'Capacidade de poupança',v:BRL(sobra)+'/mês',s:PCT(tx*100,0)+' da renda',cls:tx>=.2?'exc':tx>=.1?'boa':'aten'},
+    {l:'Liquidez (reserva)',v:cob.toFixed(1)+' meses',s:'Caixa disponível: '+BRL(S.patrimonio.conta),cls:cob>=6?'exc':cob>=3?'boa':'aten'},
+    {l:'Endividamento',v:S.patrimonio.dividas?BRL(S.patrimonio.dividas):'Zero',s:S.patrimonio.dividas?'Atenção a juros':'Sem dívidas ativas',cls:S.patrimonio.dividas?'aten':'exc'},
+  ];
+  return `
+  <div class="section-intro"><h2>Onde vocês estão hoje</h2><p>Retrato consolidado da saúde financeira da família com base no mês de <b>${mLabel(m)}</b>. Os indicadores são classificados em quatro níveis: Excelente, Boa, Atenção e Crítica.</p></div>
+  <div class="grid g4" style="margin-bottom:18px">
+    ${ind.map(i=>`<div class="kpi ${i.a?'accent':''}">
+      <div class="lbl">${i.l}</div><div class="val">${i.v}</div>
+      <div class="sub">${i.cls?`<span class="chip ${i.cls}">${rating(i.cls==='exc'?90:i.cls==='boa'?70:i.cls==='aten'?50:20).t}</span> `:''}${i.s}</div>
+    </div>`).join('')}
+  </div>
+  <div class="grid g2" style="grid-template-columns:1.4fr 1fr;margin-bottom:18px">
+    <div class="card"><div class="card-h"><h3>Evolução do patrimônio líquido</h3><span class="tag">${ms.length} meses</span></div>
+      ${line(evolVals)}
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:6px">${ms.map(mm=>`<span>${mLabel(mm)}</span>`).join('')}</div>
+    </div>
+    <div class="card"><div class="card-h"><h3>Saúde geral</h3></div>
+      <div style="text-align:center;padding:8px 0">
+        <div style="font-family:Fraunces;font-size:64px;line-height:1;color:var(--blue)">${hs.total}<span style="font-size:24px;color:var(--muted)">/100</span></div>
+        <div style="margin-top:10px"><span class="chip ${rt.cls}" style="font-size:13px;padding:6px 14px">${rt.t}</span></div>
+      </div>
+      <div class="bar" style="margin-top:14px;height:11px"><span style="width:${hs.total}%"></span></div>
+      <p style="font-size:12.5px;color:var(--ink-soft);margin-top:12px">Detalhamento completo no <b>Painel de Saúde Financeira</b>.</p>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-h"><h3>Resumo do mês — ${mLabel(m)}</h3></div>
+    <div class="grid g3">
+      <div><div class="stat-line"><span>Receitas totais</span><b class="up">${BRL(r)}</b></div>
+        <div class="stat-line"><span>Despesas totais</span><b class="down">${BRL(d)}</b></div>
+        <div class="stat-line"><span>Resultado</span><b>${BRL(sobra)}</b></div></div>
+      <div><div class="stat-line"><span>Renda — Rodrigo</span><b>${BRL(recPessoaMes(m,'rodrigo'))}</b></div>
+        <div class="stat-line"><span>Renda — Esther</span><b>${BRL(recPessoaMes(m,'esther'))}</b></div>
+        <div class="stat-line"><span>Taxa de poupança</span><b>${PCT(tx*100,0)}</b></div></div>
+      <div><div class="stat-line"><span>Gasto — Rodrigo</span><b>${BRL(despMes(m,'rodrigo'))}</b></div>
+        <div class="stat-line"><span>Gasto — Esther</span><b>${BRL(despMes(m,'esther'))}</b></div>
+        <div class="stat-line"><span>Gasto — Casal</span><b>${BRL(despMes(m,'casal'))}</b></div></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:18px"><div class="card-h"><h3>Desempenho individual</h3><span class="tag">parte do casal rateada · ${rateio()==='renda'?'proporcional à renda':'50 / 50'}</span></div>
+    <table><thead><tr><th>Pessoa</th><th style="text-align:right">Renda</th><th style="text-align:right">Gastos pessoais</th><th style="text-align:right">Parte do casal</th><th style="text-align:right">Resultado</th><th style="text-align:right">Poupança</th></tr></thead><tbody>
+    ${['rodrigo','esther'].map(p=>{const rr=recPessoaMes(m,p),pp=despMes(m,p),sh=shareCasal(m,p),so=rr-pp-sh,t=txPoupIndiv(m,p);
+      return `<tr><td><span class="who"><span class="dot ${p==='rodrigo'?'r':'e'}"></span>${pNome(p)}</span></td>
+        <td class="num-cell up">${BRL(rr)}</td><td class="num-cell">${BRL(pp)}</td><td class="num-cell">${BRL(sh)}</td>
+        <td class="num-cell ${so>=0?'up':'down'}">${BRL(so)}</td><td class="num-cell">${PCT(t*100,0)}</td></tr>`;}).join('')}
+    </tbody></table>
+    <p style="font-size:12px;color:var(--muted);margin-top:10px">Abra o perfil de cada pessoa no topo para a visão individual completa.</p>
+  </div>`;
+}
+
+/* ---- diagnóstico individual ---- */
+function vDiagIndiv(p){
+  const m=curMonth(), nome=pNome(p);
+  const r=recPessoaMes(m,p), pess=despMes(m,p), share=shareCasal(m,p), d=pess+share, sobra=r-d, tx=txPoupIndiv(m,p);
+  const hs=healthScoreIndiv(p), rt=rating(hs.total);
+  const ms=months(); const evolVals=[]; let run=0; ms.forEach(mm=>{run+=sobraIndiv(mm,p);evolVals.push(run);});
+  const comps=Object.entries(hs.comp), maxes={'Poupança':50,'Disciplina de gastos':30,'Contribuição':20};
+  const ind=[
+    {l:'Sua renda do mês',v:BRL(r),s:'Total recebido por '+nome,a:true},
+    {l:'Seus gastos',v:BRL(d),s:`Pessoais ${BRL(pess)} + parte do casal ${BRL(share)}`},
+    {l:'Seu resultado',v:BRL(sobra)+'/mês',s:PCT(tx*100,0)+' da sua renda',cls:tx>=.2?'exc':tx>=.1?'boa':'aten'},
+    {l:'Saúde individual',v:hs.total+'/100',s:`<span class="chip ${rt.cls}">${rt.t}</span>`},
+  ];
+  return `
+  <div class="section-intro"><h2>Desempenho de ${nome}</h2><p>Visão individual de <b>${mLabel(m)}</b>: sua renda, seus gastos pessoais, a sua parte das despesas compartilhadas e a sua taxa de poupança. Patrimônio, reserva e investimentos são recursos do casal.</p></div>
+  <div class="grid g4" style="margin-bottom:18px">
+    ${ind.map(i=>`<div class="kpi ${i.a?'accent':''}"><div class="lbl">${i.l}</div><div class="val" style="font-size:${i.a?30:24}px">${i.v}</div><div class="sub">${i.cls?`<span class="chip ${i.cls}">${rating(i.cls==='exc'?90:i.cls==='boa'?70:50).t}</span> `:''}${i.s}</div></div>`).join('')}
+  </div>
+  <div class="grid g2" style="grid-template-columns:1.4fr 1fr;margin-bottom:18px">
+    <div class="card"><div class="card-h"><h3>Sua evolução (sobra acumulada)</h3><span class="tag">${ms.length} ${ms.length===1?'mês':'meses'}</span></div>
+      ${evolVals.length>1?line(evolVals):'<div class="empty">Lance mais de um mês para ver a evolução.</div>'}
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:6px">${ms.map(mm=>`<span>${mLabel(mm)}</span>`).join('')}</div>
+    </div>
+    <div class="card"><div class="card-h"><h3>Sua saúde individual</h3></div>
+      <div style="text-align:center;padding:4px 0 12px"><div style="font-family:Fraunces;font-size:56px;line-height:1;color:var(--blue)">${hs.total}<span style="font-size:22px;color:var(--muted)">/100</span></div>
+        <div style="margin-top:8px"><span class="chip ${rt.cls}" style="padding:6px 14px">${rt.t}</span></div></div>
+      ${comps.map(([k,v])=>`<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px"><span>${k}</span><b>${v.toFixed(0)}/${maxes[k]}</b></div><div class="bar"><span style="width:${v/maxes[k]*100}%"></span></div></div>`).join('')}
+    </div>
+  </div>
+  <div class="card"><div class="card-h"><h3>Resumo de ${nome} — ${mLabel(m)}</h3>
+    <span class="seg" style="margin-left:auto" id="rateioSeg"><button class="${rateio()==='igual'?'active':''}" data-rateio="igual">Casal 50/50</button><button class="${rateio()==='renda'?'active':''}" data-rateio="renda">Proporcional à renda</button></span></div>
+    <div class="grid g3">
+      <div><div class="stat-line"><span>Sua renda</span><b class="up">${BRL(r)}</b></div>
+        <div class="stat-line"><span>Gastos pessoais</span><b class="down">${BRL(pess)}</b></div>
+        <div class="stat-line"><span>Sua parte do casal</span><b class="down">${BRL(share)}</b></div></div>
+      <div><div class="stat-line"><span>Total de gastos</span><b>${BRL(d)}</b></div>
+        <div class="stat-line"><span>Resultado do mês</span><b class="${sobra>=0?'up':'down'}">${BRL(sobra)}</b></div>
+        <div class="stat-line"><span>Taxa de poupança</span><b>${PCT(tx*100,0)}</b></div></div>
+      <div><div class="stat-line"><span>Despesa total do casal</span><b>${BRL(despMes(m,'casal'))}</b></div>
+        <div class="stat-line"><span>Critério de rateio</span><b>${rateio()==='renda'?'Proporcional':'50 / 50'}</b></div>
+        <div class="stat-line"><span>Saúde individual</span><b>${hs.total}/100</b></div></div>
+    </div>
+  </div>`;
+}
+
+/* ============================ VIEW: SAÚDE ============================ */
+function vSaude(){
+  const pf=perfil(); if(pf!=='casal') return vSaudeIndiv(pf);
+  const hs=healthScore(),rt=rating(hs.total),m=curMonth();
+  const comps=Object.entries(hs.comp);
+  const maxes={Poupança:25,Reserva:25,Investimento:20,Endividamento:20,'Consistência':10};
+  return `
+  <div class="section-intro"><h2>Pontuação de 0 a 100</h2><p>Indicador composto que mede taxa de poupança, reserva de emergência, nível de investimento, endividamento e consistência. Atualiza automaticamente conforme os lançamentos.</p></div>
+  <div class="grid g2" style="grid-template-columns:.9fr 1.4fr;margin-bottom:18px">
+    <div class="card" style="text-align:center;display:flex;flex-direction:column;justify-content:center">
+      <div style="font-family:Fraunces;font-size:82px;line-height:.9;color:var(--blue)">${hs.total}</div>
+      <div style="color:var(--muted);font-size:13px;letter-spacing:.1em;text-transform:uppercase;margin-top:4px">de 100 pontos</div>
+      <div style="margin-top:16px"><span class="chip ${rt.cls}" style="font-size:15px;padding:8px 18px">${rt.t}</span></div>
+    </div>
+    <div class="card"><div class="card-h"><h3>Composição da nota</h3></div>
+      ${comps.map(([k,v])=>`<div style="margin-bottom:13px"><div style="display:flex;justify-content:space-between;font-size:13.5px;margin-bottom:5px"><span>${k}</span><b>${v.toFixed(0)} / ${maxes[k]} pts</b></div><div class="bar"><span style="width:${v/maxes[k]*100}%"></span></div></div>`).join('')}
+    </div>
+  </div>
+  <div class="grid g4">
+    ${[['Taxa de poupança',PCT(hs.tx*100,0),hs.tx>=.2?'exc':hs.tx>=.1?'boa':'aten'],
+       ['Reserva (cobertura)',hs.mesesCob.toFixed(1)+' meses',hs.mesesCob>=6?'exc':hs.mesesCob>=3?'boa':'aten'],
+       ['Taxa de investimento',PCT(S.patrimonio.investido/(recMes(m)*6||1)*100,0),'boa'],
+       ['Endividamento',S.patrimonio.dividas?BRL(S.patrimonio.dividas):'0%',S.patrimonio.dividas?'aten':'exc']
+    ].map(([l,v,c])=>`<div class="kpi"><div class="lbl">${l}</div><div class="val" style="font-size:24px">${v}</div><div class="sub"><span class="chip ${c}">${rating(c==='exc'?90:c==='boa'?70:50).t}</span></div></div>`).join('')}
+  </div>`;
+}
+
+/* ---- saúde individual ---- */
+function vSaudeIndiv(p){
+  const hs=healthScoreIndiv(p),rt=rating(hs.total),m=curMonth(),nome=pNome(p);
+  const comps=Object.entries(hs.comp), maxes={'Poupança':50,'Disciplina de gastos':30,'Contribuição':20};
+  return `
+  <div class="section-intro"><h2>Saúde individual de ${nome}</h2><p>Nota pessoal de 0 a 100 com base na sua taxa de poupança, na disciplina dos seus gastos pessoais (comparada à sua média) e na sua capacidade de cobrir a própria parte das despesas.</p></div>
+  <div class="grid g2" style="grid-template-columns:.9fr 1.4fr;margin-bottom:18px">
+    <div class="card" style="text-align:center;display:flex;flex-direction:column;justify-content:center">
+      <div style="font-family:Fraunces;font-size:82px;line-height:.9;color:var(--blue)">${hs.total}</div>
+      <div style="color:var(--muted);font-size:13px;letter-spacing:.1em;text-transform:uppercase;margin-top:4px">de 100 pontos</div>
+      <div style="margin-top:16px"><span class="chip ${rt.cls}" style="font-size:15px;padding:8px 18px">${rt.t}</span></div>
+    </div>
+    <div class="card"><div class="card-h"><h3>Composição da sua nota</h3></div>
+      ${comps.map(([k,v])=>`<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:13.5px;margin-bottom:5px"><span>${k}</span><b>${v.toFixed(0)} / ${maxes[k]} pts</b></div><div class="bar"><span style="width:${v/maxes[k]*100}%"></span></div></div>`).join('')}
+    </div>
+  </div>
+  <div class="grid g3">
+    ${[['Sua taxa de poupança',PCT(hs.tx*100,0),hs.tx>=.2?'exc':hs.tx>=.1?'boa':'aten'],
+       ['Seus gastos pessoais',BRL(despMes(m,p)),'boa'],
+       ['Sua parte do casal',BRL(shareCasal(m,p)),'boa']
+    ].map(([l,v,c])=>`<div class="kpi"><div class="lbl">${l}</div><div class="val" style="font-size:24px">${v}</div><div class="sub"><span class="chip ${c}">${rating(c==='exc'?90:c==='boa'?70:50).t}</span></div></div>`).join('')}
+  </div>`;
+}
+
+/* ============================ VIEW: ANÁLISE ============================ */
+function vAnalise(){
+  const pf=perfil(), m=curMonth();
+  const al=analisar(pf==='casal'?null:pf);
+  const catTot={};
+  const filt = pf==='casal'? d=>d.mes===m : d=>d.mes===m&&(d.dono===pf||d.dono==='casal');
+  S.despesas.filter(filt).forEach(d=>{const k=(pf!=='casal'&&d.dono==='casal'?'(casal) ':'')+d.cat;catTot[k]=(catTot[k]||0)+d.valor;});
+  const top=Object.entries(catTot).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([l,v])=>({l,v}));
+  const quem = pf==='casal'?'do casal':'de '+pNome(pf);
+  return `
+  <div class="section-intro"><h2>O sistema lê os gastos ${quem}</h2><p>Comparamos cada categoria do mês atual com a média dos meses anteriores e geramos alertas automáticos de gastos excessivos, compras impulsivas e oportunidades de economia.${pf!=='casal'?' Inclui sua parte das despesas compartilhadas.':''}</p></div>
+  <div class="grid g2" style="grid-template-columns:1.3fr 1fr">
+    <div>
+      <div class="card-h" style="margin-bottom:14px"><h3 style="font-size:19px">Alertas automáticos · ${mLabel(m)}</h3></div>
+      ${al.length?al.map(a=>`<div class="alert ${a.t}"><div class="ai">${a.t==='pos'?'✓':a.t==='crit'?'!':'~'}</div><div><h4>${a.h}</h4><p>${a.p}</p></div></div>`).join(''):'<div class="empty">Sem desvios relevantes neste mês. Continue lançando para gerar comparativos.</div>'}
+    </div>
+    <div class="card"><div class="card-h"><h3>Maiores categorias do mês</h3></div>
+      ${top.length?hbars(top):'<div class="empty">Sem despesas lançadas.</div>'}
+    </div>
+  </div>`;
+}
+
+/* ============================ VIEW: RECEITAS ============================ */
+function vRec(){
+  const pf=perfil(), m=curMonth();
+  const linha=p=>{ const list=S.receitas.filter(r=>r.mes===m&&r.pessoa===p);
+    return `<table><thead><tr><th>Categoria</th><th style="text-align:right">Valor</th><th></th></tr></thead><tbody>
+      ${list.length?list.map(r=>`<tr><td>${r.cat}</td><td class="num-cell">${BRL(r.valor)}</td><td style="width:40px"><button class="icon-btn" data-del-rec="${r.id}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></td></tr>`).join(''):'<tr><td colspan="3" class="empty">Nenhuma receita lançada.</td></tr>'}
+    </tbody></table>`; };
+  const catsR={rodrigo:['Pró-labore','Distribuição de lucros','Comissões','Rendas extras'],esther:['Consultas','Vacinação','Cirurgias','Procedimentos','Serviços extras']};
+  if(pf!=='casal'){
+    return `
+    <div class="section-intro"><h2>Receitas de ${pNome(pf)}</h2><p>Sua área de lançamentos de renda no mês de <b>${mLabel(m)}</b>. ${monthSelector()}</p></div>
+    <div class="card" style="margin-bottom:18px"><div class="card-h"><span class="dot ${pf==='rodrigo'?'r':'e'}"></span><h3>${pNome(pf)}</h3><span class="tag">${BRL(recPessoaMes(m,pf))}</span></div>${linha(pf)}
+      ${addForm('rec',pf,catsR[pf])}</div>
+    <div class="kpi accent"><div class="lbl">Sua renda total · ${mLabel(m)}</div><div class="val">${BRL(recPessoaMes(m,pf))}</div></div>`;
+  }
+  return `
+  <div class="section-intro"><h2>Receitas por pessoa</h2><p>Controle individual das fontes de renda de Rodrigo e Esther no mês de <b>${mLabel(m)}</b>. ${monthSelector()}</p></div>
+  <div class="grid g2" style="margin-bottom:18px">
+    <div class="card"><div class="card-h"><span class="dot r"></span><h3>Rodrigo</h3><span class="tag">${BRL(recPessoaMes(m,'rodrigo'))}</span></div>${linha('rodrigo')}
+      ${addForm('rec','rodrigo',catsR.rodrigo)}</div>
+    <div class="card"><div class="card-h"><span class="dot e"></span><h3>Esther</h3><span class="tag">${BRL(recPessoaMes(m,'esther'))}</span></div>${linha('esther')}
+      ${addForm('rec','esther',catsR.esther)}</div>
+  </div>
+  <div class="kpi accent"><div class="lbl">Renda familiar total · ${mLabel(m)}</div><div class="val">${BRL(recMes(m))}</div></div>`;
+}
+
+/* ============================ VIEW: DESPESAS ============================ */
+function vDesp(){
+  const pf=perfil(), m=curMonth();
+  const bloco=(dono,nome,dotCls,cats)=>{ const list=S.despesas.filter(d=>d.mes===m&&d.dono===dono);
+    return `<div class="card"><div class="card-h"><span class="dot ${dotCls}"></span><h3>${nome}</h3><span class="tag">${BRL(despMes(m,dono))}</span></div>
+      <table><tbody>${list.length?list.map(d=>`<tr><td>${d.cat}</td><td class="num-cell">${BRL(d.valor)}</td><td style="width:40px"><button class="icon-btn" data-del-desp="${d.id}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></td></tr>`).join(''):'<tr><td colspan="3" class="empty">Sem lançamentos.</td></tr>'}</tbody></table>
+      ${addForm('desp',dono,cats)}</div>`; };
+  const catsP={rodrigo:['Gastos pessoais','Carro','Combustível','Lazer','Assinaturas','Alimentação'],esther:['Gastos pessoais','Transporte','Alimentação','Compras pessoais','Assinaturas']};
+  const catsCasal=['Moradia','Energia','Internet','Água','Mercado','Farmácia','Pets','Saúde','Viagens','Restaurantes','Presentes','Imprevistos'];
+  if(pf!=='casal'){
+    const share=shareCasal(m,pf), seu=despMes(m,pf)+share;
+    return `
+    <div class="section-intro"><h2>Despesas de ${pNome(pf)}</h2><p>Sua área de lançamentos: gastos pessoais e as despesas compartilhadas do casal. A sua parte é rateada <b>${rateio()==='renda'?'proporcional à renda':'50 / 50'}</b>. ${monthSelector()}</p></div>
+    <div class="grid g2" style="margin-bottom:18px">
+      ${bloco(pf,'Seus gastos pessoais',pf==='rodrigo'?'r':'e',catsP[pf])}
+      ${bloco('casal','Despesas compartilhadas (casal)','c',catsCasal)}
+    </div>
+    <div class="grid g3" style="margin-top:0">
+      <div class="kpi"><div class="lbl">Gastos pessoais</div><div class="val" style="font-size:24px">${BRL(despMes(m,pf))}</div></div>
+      <div class="kpi"><div class="lbl">Sua parte do casal</div><div class="val" style="font-size:24px">${BRL(share)}</div><div class="sub">de ${BRL(despMes(m,'casal'))} totais</div></div>
+      <div class="kpi" style="background:var(--crit-bg);border:none"><div class="lbl" style="color:var(--critical)">Seu gasto total</div><div class="val" style="font-size:24px;color:var(--critical)">${BRL(seu)}</div></div>
+    </div>`;
+  }
+  return `
+  <div class="section-intro"><h2>Despesas individuais e do casal</h2><p>Separação clara entre gastos de Rodrigo, de Esther e despesas compartilhadas. ${monthSelector()}</p></div>
+  <div class="grid g2" style="margin-bottom:18px">
+    ${bloco('rodrigo','Rodrigo','r',catsP.rodrigo)}
+    ${bloco('esther','Esther','e',catsP.esther)}
+  </div>
+  ${bloco('casal','Despesas do Casal','c',catsCasal)}
+  <div class="kpi" style="margin-top:18px;background:var(--crit-bg);border:none"><div class="lbl" style="color:var(--critical)">Despesa total · ${mLabel(m)}</div><div class="val" style="color:var(--critical)">${BRL(despMes(m))}</div></div>`;
+}
+
+/* ============================ VIEW: METAS ============================ */
+function vMetas(){
+  const grupos={curto:'Curto Prazo',medio:'Médio Prazo',longo:'Longo Prazo'};
+  return `
+  <div class="section-intro"><h2>Metas financeiras</h2><p>Objetivos de curto, médio e longo prazo com acompanhamento de progresso. Revisar mensalmente.</p></div>
+  ${Object.entries(grupos).map(([k,lbl])=>{ const list=S.metas.filter(g=>g.prazo===k);
+    return `<div class="card" style="margin-bottom:16px"><div class="card-h"><h3>${lbl}</h3></div>
+      ${list.map(g=>{const p=clamp(g.atual/g.alvo*100,0,100);
+        return `<div style="margin-bottom:16px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-weight:600">${g.nome}</span>
+          <span style="font-size:13px;color:var(--ink-soft);font-variant-numeric:tabular-nums">${BRL(g.atual)} <span style="color:var(--muted)">/ ${BRL(g.alvo)}</span> · <b>${PCT(p,0)}</b>
+            <button class="icon-btn" style="display:inline-grid;vertical-align:middle" data-del-meta="${g.id}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></span></div>
+          <div class="bar ${k==='longo'?'gold':''}"><span style="width:${p}%"></span></div></div>`;}).join('')||'<div class="empty">Nenhuma meta.</div>'}
+      <div class="form-row" style="margin-top:14px">
+        <div class="field"><label>Nova meta (${lbl})</label><input id="mn-${k}" placeholder="Ex.: Reserva, viagem..."></div>
+        <div class="field"><label>Alvo R$</label><input id="ma-${k}" type="number" placeholder="0"></div>
+        <div class="field"><label>Já guardado R$</label><input id="mc-${k}" type="number" placeholder="0"></div>
+        <button class="btn" data-add-meta="${k}">Adicionar</button></div>
+    </div>`;}).join('')}`;
+}
+
+/* ============================ VIEW: RESERVA ============================ */
+function vReserva(){
+  const md=mediaDespesa(),acc=S.patrimonio.conta;
+  const i6=md*6,i12=md*12;
+  const card=(meses,ideal)=>{const p=ideal>0?clamp(acc/ideal*100,0,100):0;
+    return `<div class="card"><div class="card-h"><h3>${meses} meses de despesas</h3><span class="tag">${PCT(p,0)} atingido</span></div>
+      <div class="stat-line"><span>Valor ideal</span><b>${BRL(ideal)}</b></div>
+      <div class="stat-line"><span>Valor acumulado</span><b class="up">${BRL(acc)}</b></div>
+      <div class="stat-line"><span>Falta acumular</span><b class="${ideal-acc>0?'down':'up'}">${BRL(Math.max(0,ideal-acc))}</b></div>
+      <div class="bar" style="margin-top:14px;height:11px"><span style="width:${p}%"></span></div></div>`;};
+  return `
+  <div class="section-intro"><h2>Reserva de emergência</h2><p>Calculada automaticamente sobre a média de despesas (<b>${BRL(md)}/mês</b>). A reserva deve ficar intacta e em ativos de alta liquidez.</p></div>
+  <div class="grid g2" style="margin-bottom:18px">${card(6,i6)}${card(12,i12)}</div>
+  <div class="card"><div class="card-h"><h3>Sugestão de alocação da reserva</h3><span class="tag">Segurança e liquidez diária</span></div>
+    <div class="grid g3">
+      ${[['Tesouro Selic','Liquidez diária, risco soberano. Núcleo da reserva.'],
+         ['CDB liquidez diária','Bancos sólidos, cobertura FGC até R$ 250 mil por instituição.'],
+         ['Conta remunerada segura','Para o caixa do mês a mês, com resgate imediato.']].map(([t,d])=>
+        `<div style="background:var(--surface2);border:1px solid var(--line-soft);border-radius:13px;padding:15px"><b style="font-family:Fraunces;font-size:16px">${t}</b><p style="font-size:12.5px;color:var(--ink-soft);margin-top:6px">${d}</p></div>`).join('')}
+    </div>
+  </div>
+  <div class="card" style="margin-top:18px"><div class="card-h"><h3>Patrimônio atual</h3><span class="tag">preencha seus valores</span></div>
+    <div class="form-row">
+      <div class="field"><label>Investimentos R$</label><input id="inv-in" type="number" value="${S.patrimonio.investido}"></div>
+      <div class="field"><label>Caixa / reserva R$</label><input id="conta-in" type="number" value="${S.patrimonio.conta}"></div>
+      <div class="field"><label>Dívidas R$</label><input id="div-in" type="number" value="${S.patrimonio.dividas}"></div>
+      <button class="btn" data-save-conta>Atualizar</button></div></div>`;
+}
+
+/* ============================ VIEW: VIAGENS ============================ */
+function vViagem(){
+  return `
+  <div class="section-intro"><h2>Fundo de viagens</h2><p>Cada destino tem seu próprio fundo, com cálculo automático do valor mensal necessário para chegar à meta no prazo.</p></div>
+  <div class="grid g2" style="margin-bottom:18px">
+    ${S.viagens.map(v=>{const mensal=Math.max(0,(v.valor-v.guardado)/v.meses),p=clamp(v.guardado/v.valor*100,0,100);
+      return `<div class="card"><div class="card-h"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.7"><path d="${ICON.viagem}"/></svg><h3>${v.destino}</h3>
+        <button class="icon-btn" style="margin-left:auto" data-del-viagem="${v.id}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></div>
+        <div class="stat-line"><span>Valor estimado</span><b>${BRL(v.valor)}</b></div>
+        <div class="stat-line"><span>Prazo</span><b>${v.meses} meses</b></div>
+        <div class="stat-line"><span>Já guardado</span><b class="up">${BRL(v.guardado)}</b></div>
+        <div class="stat-line"><span>Guardar por mês</span><b style="color:var(--gold)">${BRL(mensal)}</b></div>
+        <div class="bar gold" style="margin-top:12px"><span style="width:${p}%"></span></div></div>`;}).join('')}
+  </div>
+  <div class="card"><div class="card-h"><h3>Novo fundo de viagem</h3></div>
+    <div class="form-row">
+      <div class="field"><label>Destino</label><input id="vg-d" placeholder="Ex.: Praia, Gramado..."></div>
+      <div class="field"><label>Valor estimado R$</label><input id="vg-v" type="number" placeholder="6000"></div>
+      <div class="field"><label>Prazo (meses)</label><input id="vg-m" type="number" placeholder="12"></div>
+      <div class="field"><label>Já guardado R$</label><input id="vg-g" type="number" placeholder="0"></div>
+      <button class="btn" data-add-viagem>Criar fundo</button></div>
+    <p style="font-size:12.5px;color:var(--muted);margin-top:12px">Exemplo do manual: viagem de R$ 6.000 em 12 meses → guardar <b>R$ 500/mês</b>.</p></div>`;
+}
+
+/* ============================ VIEW: QUALIDADE ============================ */
+function vQual(){
+  const total=Object.values(S.qualidade).reduce((a,b)=>a+b,0);
+  const r=recMes(curMonth()), share=total/(r||1)*100;
+  return `
+  <div class="section-intro"><h2>Qualidade de vida em primeiro lugar</h2><p>Valores reservados todo mês para viver bem hoje — sem que os investimentos comprometam o presente. Hoje representa <b>${PCT(share,0)}</b> da renda.</p></div>
+  <div class="grid g2" style="grid-template-columns:1.2fr 1fr">
+    <div class="card"><div class="card-h"><h3>Orçamento mensal de bem-estar</h3><span class="tag">${BRL(total)}/mês</span></div>
+      ${hbars(Object.entries(S.qualidade).map(([l,v])=>({l,v,c:'linear-gradient(90deg,var(--gold),var(--gold-soft))'})))}
+    </div>
+    <div class="card"><div class="card-h"><h3>Ajustar valores</h3></div>
+      ${Object.keys(S.qualidade).map(k=>`<div class="field" style="margin-bottom:10px"><label>${k}</label><input type="number" data-qual="${k}" value="${S.qualidade[k]}"></div>`).join('')}
+      <button class="btn" data-save-qual style="width:100%;justify-content:center;margin-top:6px">Salvar orçamento</button>
+    </div>
+  </div>`;
+}
+
+/* ============================ VIEW: INVESTIMENTOS ============================ */
+function vInvest(){
+  const a=S.invest.alocacao;
+  const segs=[
+    {label:'Renda Fixa',pct:a.rf,color:'#1f5793',desc:'Tesouro Selic, Tesouro IPCA+, CDBs'},
+    {label:'Fundos Imobiliários',pct:a.fii,color:'#b08a3e',desc:'Foco em dividendos mensais'},
+    {label:'Ações de dividendos',pct:a.acoes,color:'#7d8a82',desc:'Empresas pagadoras consistentes'},
+    {label:'Reserva de oportunidades',pct:a.oport,color:'#cdb074',desc:'Caixa para aproveitar quedas'},
+  ];
+  return `
+  <div class="section-intro"><h2>Carteira equilibrada — segurança primeiro</h2><p>Distribuição sugerida no seu plano, priorizando previsibilidade e geração de renda. Os percentuais são editáveis.</p></div>
+  <div class="grid g2" style="grid-template-columns:1fr 1.1fr;margin-bottom:18px">
+    <div class="card"><div class="card-h"><h3>Alocação da carteira</h3></div>
+      <div class="donut-wrap"><div>${donut(segs)}</div>
+        <div class="legend">${segs.map(s=>`<div class="legend-row"><span class="sw" style="background:${s.color}"></span><span>${s.label}</span><span class="lp">${s.pct}%</span></div>`).join('')}</div></div>
+    </div>
+    <div class="card"><div class="card-h"><h3>O que entra em cada fatia</h3></div>
+      ${segs.map(s=>`<div style="display:flex;gap:12px;padding:11px 0;border-bottom:1px dashed var(--line-soft)"><span class="sw" style="width:13px;height:13px;border-radius:4px;background:${s.color};margin-top:3px;flex:none"></span><div><b>${s.label} · ${s.pct}%</b><p style="font-size:12.5px;color:var(--ink-soft)">${s.desc}</p></div></div>`).join('')}
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:18px"><div class="card-h"><h3>Ajustar alocação</h3><span class="tag" id="aloc-sum"></span></div>
+    <div class="form-row">
+      ${[['rf','Renda Fixa'],['fii','FIIs'],['acoes','Ações'],['oport','Oportunidades']].map(([k,l])=>`<div class="field"><label>${l} %</label><input type="number" data-aloc="${k}" value="${a[k]}"></div>`).join('')}
+      <button class="btn" data-save-aloc>Salvar</button></div>
+  </div>
+  <div class="card" style="margin-bottom:18px"><div class="card-h"><h3>Exemplos de ativos citados no seu plano</h3></div>
+    <p style="font-size:13.5px;color:var(--ink-soft);margin-bottom:6px">Ações pagadoras de dividendos listadas no documento: Banco do Brasil, Itaú, Taesa, BB Seguridade, Caixa Seguridade e Petrobras (com exposição limitada). São <b>exemplos ilustrativos do seu plano</b>, não recomendações de compra.</p>
+  </div>
+  <div class="disclaimer"><b>Aviso importante:</b> não sou consultor de investimentos licenciado. Este painel é uma ferramenta educacional e de organização. As alocações e ativos refletem o plano que você descreveu e servem apenas como referência. Antes de investir, considere seu perfil de risco e procure um profissional certificado e registrado na CVM.</div>`;
+}
+
+/* ============================ VIEW: APORTE ============================ */
+let cenario='moderado';
+function vAporte(){
+  const r=S.profile.rodrigo.prolabore+S.profile.esther.renda;
+  const cen={conservador:.10,moderado:.15,agressivo:.20}, pmt=r*cen[cenario];
+  const taxa=S.invest.taxaAnual, principal=S.patrimonio.investido;
+  const horizons=[5,10,20];
+  const vals=horizons.map(y=>fvAporte(pmt,taxa,y,principal));
+  const max=Math.max(...vals);
+  return `
+  <div class="section-intro"><h2>Plano de aporte mensal</h2><p>Projeção de patrimônio com juros compostos sobre a renda familiar de <b>${BRL(r)}</b>. Escolha o cenário e ajuste a taxa de retorno anual estimada.</p></div>
+  <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:20px">
+    <div class="scenario-tabs">
+      ${[['conservador','Conservador · 10%'],['moderado','Moderado · 15%'],['agressivo','Agressivo · 20%']].map(([k,l])=>`<button class="${cenario===k?'active':''}" data-cen="${k}">${l}</button>`).join('')}
+    </div>
+    <div class="field" style="max-width:170px"><label>Retorno anual estimado %</label><input type="number" step="0.5" id="taxa-in" value="${taxa}"></div>
+    <div class="pill">Aporte mensal · <b>${BRL(pmt)}</b></div>
+  </div>
+  <div class="grid g3" style="margin-bottom:18px">
+    ${horizons.map((y,i)=>`<div class="kpi ${i===2?'accent':''}"><div class="lbl">Patrimônio em ${y} anos</div><div class="val">${BRLk(vals[i])}</div><div class="sub">Aporte ${BRL(pmt)}/mês + capital inicial ${BRL(principal)}</div></div>`).join('')}
+  </div>
+  <div class="card"><div class="card-h"><h3>Crescimento projetado</h3><span class="tag">Juros compostos a ${PCT(taxa,1)} a.a.</span></div>
+    <div style="display:flex;gap:24px;align-items:flex-end;height:230px;padding:10px 6px">
+      ${horizons.map((y,i)=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end">
+        <b style="font-family:Fraunces;font-size:16px;color:var(--blue)">${BRLk(vals[i])}</b>
+        <div style="width:64%;background:linear-gradient(180deg,var(--gold),var(--blue));border-radius:10px 10px 0 0;height:${vals[i]/max*78}%;min-height:14px"></div>
+        <span style="font-size:12.5px;color:var(--muted)">${y} anos</span></div>`).join('')}
+    </div></div>
+  <div class="disclaimer" style="margin-top:16px">Projeções ilustrativas com taxa nominal constante e aportes regulares. Retornos reais variam e não são garantidos.</div>`;
+}
+
+/* ============================ VIEW: DIVIDENDOS ============================ */
+function vDivid(){
+  const r=S.profile.rodrigo.prolabore+S.profile.esther.renda;
+  const pmt=r*0.15, taxa=S.invest.taxaAnual, dy=S.invest.dyMedio, principal=S.patrimonio.investido;
+  const horizons=[5,10,15,20];
+  const rows=horizons.map(y=>{const pat=fvAporte(pmt,taxa,y,principal);const dm=dividendosMensais(pat);return{y,pat,dm,da:dm*12};});
+  return `
+  <div class="section-intro"><h2>Simulador de dividendos</h2><p>Estimativa de renda passiva gerada pela fatia de FIIs + ações da carteira (${S.invest.alocacao.fii+S.invest.alocacao.acoes}% do patrimônio) a um dividend yield médio de <b>${PCT(dy,1)}</b> ao ano.</p></div>
+  <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:18px">
+    <div class="field" style="max-width:180px"><label>Dividend yield médio % a.a.</label><input type="number" step="0.5" id="dy-in" value="${dy}"></div>
+    <div class="field" style="max-width:180px"><label>Retorno anual %</label><input type="number" step="0.5" id="taxa-in2" value="${taxa}"></div>
+    <div class="pill">Aporte · <b>${BRL(pmt)}/mês</b></div>
+  </div>
+  <div class="card" style="margin-bottom:18px"><table><thead><tr><th>Horizonte</th><th style="text-align:right">Patrimônio acumulado</th><th style="text-align:right">Dividendos mensais</th><th style="text-align:right">Dividendos anuais</th></tr></thead>
+    <tbody>${rows.map(x=>`<tr><td><b>${x.y} anos</b></td><td class="num-cell">${BRLk(x.pat)}</td><td class="num-cell" style="color:var(--gold)">${BRL(x.dm)}</td><td class="num-cell up">${BRLk(x.da)}</td></tr>`).join('')}</tbody></table></div>
+  <div class="grid g4">
+    ${rows.map((x,i)=>`<div class="kpi ${i===3?'accent':''}"><div class="lbl">Renda passiva · ${x.y}a</div><div class="val">${BRL(x.dm)}</div><div class="sub">por mês, estimado</div></div>`).join('')}
+  </div>
+  <div class="disclaimer" style="margin-top:16px">Dividendos não são garantidos e variam conforme cada ativo. Simulação meramente ilustrativa para planejamento.</div>`;
+}
+
+/* ============================ VIEW: REGRAS ============================ */
+function vRegras(){
+  const regras=['Nunca financiar bens de consumo.','Nunca utilizar o cartão sem planejamento.','Manter a reserva de emergência intacta.','Investir todos os meses, sem exceção.','Evitar compras por impulso (regra das 48h).','Revisar as metas mensalmente.','Revisar o patrimônio trimestralmente.'];
+  return `
+  <div class="section-intro"><h2>O combinado da família</h2><p>Princípios simples que protegem o patrimônio e mantêm a disciplina ao longo do tempo.</p></div>
+  <div class="grid g2">${regras.map((r,i)=>`<div class="rule"><span class="n">${String(i+1).padStart(2,'0')}</span><p>${r}</p></div>`).join('')}</div>`;
+}
+
+/* ============================ VIEW: RELATÓRIO ============================ */
+function vRel(){
+  const pf=perfil(); if(pf!=='casal') return vRelIndiv(pf);
+  const ms=months(),m=curMonth(),idx=ms.indexOf(m),prev=idx>0?ms[idx-1]:null;
+  const r=recMes(m),d=despMes(m),sobra=r-d,tx=taxaPoupanca(m);
+  const dPrev=prev?despMes(prev):null;
+  const diffD = dPrev!=null?(d-dPrev)/dPrev:null;
+  const hs=healthScore(),rt=rating(hs.total);
+  const recs={
+    rodrigo:[], esther:[], casal:[]
+  };
+  // gerar recomendações simples
+  if(despMes(m,'rodrigo',)>0){const lz=S.despesas.filter(x=>x.dono==='rodrigo'&&x.cat==='Lazer'&&x.mes===m).reduce((a,b)=>a+b.valor,0); if(lz>400)recs.rodrigo.push('Lazer acima do habitual — revisar para liberar mais aporte.');}
+  recs.rodrigo.push('Direcionar a distribuição de lucros prioritariamente para a reserva e investimentos.');
+  recs.esther.push('Manter o ritmo de redução de gastos variáveis observado este mês.');
+  recs.esther.push('Considerar previdência/PGBL pela renda autônoma e dedução de IR.');
+  recs.casal.push(tx>=.15?'Ótima taxa de poupança — aumentar gradualmente o aporte mensal.':'Buscar elevar a taxa de poupança para ao menos 15% da renda.');
+  recs.casal.push('Concluir a reserva de 6 meses antes de aumentar a exposição em ações.');
+  return `
+  <div class="section-intro"><h2>Relatório de ${mLabel(m)}</h2><p>Resultado consolidado, evolução e recomendações personalizadas. ${monthSelector()}</p></div>
+  <div class="grid g4" style="margin-bottom:18px">
+    <div class="kpi accent"><div class="lbl">Resultado do mês</div><div class="val">${BRL(sobra)}</div><div class="sub">${PCT(tx*100,0)} da renda poupada</div></div>
+    <div class="kpi"><div class="lbl">Receitas</div><div class="val" style="font-size:24px">${BRL(r)}</div></div>
+    <div class="kpi"><div class="lbl">Despesas</div><div class="val" style="font-size:24px">${BRL(d)}</div><div class="sub">${diffD!=null?`<span class="${diffD>0?'down':'up'}">${diffD>0?'▲':'▼'} ${PCT(Math.abs(diffD)*100,0)} vs ${mLabel(prev)}</span>`:'sem comparativo'}</div></div>
+    <div class="kpi"><div class="lbl">Saúde financeira</div><div class="val" style="font-size:24px">${hs.total}/100</div><div class="sub"><span class="chip ${rt.cls}">${rt.t}</span></div></div>
+  </div>
+  <div class="grid g3">
+    ${[['Recomendações · Rodrigo','r',recs.rodrigo],['Recomendações · Esther','e',recs.esther],['Recomendações · Casal','c',recs.casal]].map(([t,dot,list])=>
+      `<div class="card"><div class="card-h"><span class="dot ${dot}"></span><h3 style="font-size:16px">${t}</h3></div>
+        ${list.map(x=>`<div style="display:flex;gap:9px;padding:9px 0;border-bottom:1px dashed var(--line-soft);font-size:13px"><span style="color:var(--gold)">◆</span><span>${x}</span></div>`).join('')}</div>`).join('')}
+  </div>`;
+}
+
+/* ---- relatório individual ---- */
+function vRelIndiv(p){
+  const ms=months(),m=curMonth(),idx=ms.indexOf(m),prev=idx>0?ms[idx-1]:null,nome=pNome(p);
+  const r=recPessoaMes(m,p), d=despIndiv(m,p), sobra=r-d, tx=txPoupIndiv(m,p);
+  const dPrev=prev!=null?despIndiv(prev,p):null, diffD=dPrev?(d-dPrev)/dPrev:null;
+  const hs=healthScoreIndiv(p), rt=rating(hs.total);
+  const recs=[];
+  const lz=S.despesas.filter(x=>x.dono===p&&x.cat==='Lazer'&&x.mes===m).reduce((a,b)=>a+b.valor,0);
+  if(lz>400) recs.push('Lazer acima do habitual — considere ajustar para liberar mais aporte.');
+  recs.push(tx>=.15?'Ótima taxa de poupança individual — direcione a sobra para os objetivos do casal.':'Buscar elevar sua taxa de poupança para ao menos 15% da sua renda.');
+  if(p==='rodrigo') recs.push('Direcionar a distribuição de lucros prioritariamente para reserva e investimentos.');
+  if(p==='esther') recs.push('Avaliar previdência/PGBL pela renda autônoma e dedução de IR.');
+  if(sobra<0) recs.push('Seus gastos superaram sua renda este mês — revise os gastos pessoais.');
+  return `
+  <div class="section-intro"><h2>Relatório de ${nome} — ${mLabel(m)}</h2><p>Seu resultado individual, evolução e recomendações pessoais. ${monthSelector()}</p></div>
+  <div class="grid g4" style="margin-bottom:18px">
+    <div class="kpi accent"><div class="lbl">Seu resultado</div><div class="val">${BRL(sobra)}</div><div class="sub">${PCT(tx*100,0)} da sua renda poupada</div></div>
+    <div class="kpi"><div class="lbl">Sua renda</div><div class="val" style="font-size:24px">${BRL(r)}</div></div>
+    <div class="kpi"><div class="lbl">Seus gastos</div><div class="val" style="font-size:24px">${BRL(d)}</div><div class="sub">${diffD!=null?`<span class="${diffD>0?'down':'up'}">${diffD>0?'▲':'▼'} ${PCT(Math.abs(diffD)*100,0)} vs ${mLabel(prev)}</span>`:'sem comparativo'}</div></div>
+    <div class="kpi"><div class="lbl">Saúde individual</div><div class="val" style="font-size:24px">${hs.total}/100</div><div class="sub"><span class="chip ${rt.cls}">${rt.t}</span></div></div>
+  </div>
+  <div class="card"><div class="card-h"><span class="dot ${p==='rodrigo'?'r':'e'}"></span><h3>Recomendações para ${nome}</h3></div>
+    ${recs.map(x=>`<div style="display:flex;gap:9px;padding:10px 0;border-bottom:1px dashed var(--line-soft);font-size:13.5px"><span style="color:var(--gold)">◆</span><span>${x}</span></div>`).join('')}
+  </div>`;
+}
+
+/* ============================ FORM / SELECT HELPERS ============================ */
+function addForm(tipo,who,cats){
+  return `<div class="form-row" style="margin-top:14px">
+    <div class="field"><label>Categoria</label><select data-cat="${tipo}-${who}">${cats.map(c=>`<option>${c}</option>`).join('')}</select></div>
+    <div class="field"><label>Valor R$</label><input type="number" data-val="${tipo}-${who}" placeholder="0"></div>
+    <button class="btn sm" data-add="${tipo}|${who}">Lançar</button></div>`;
+}
+function monthSelector(){
+  let ms=months(); if(!ms.length) ms=[curMonth()];
+  return `<span style="display:inline-flex;gap:6px;align-items:center;margin-left:6px"><span class="seg" id="monthSeg">${ms.map(m=>`<button class="${m===curMonth()?'active':''}" data-month="${m}">${mLabel(m)}</button>`).join('')}</span></span>`;
+}
+
+/* ============================ EVENTS ============================ */
+function attachViewEvents(){
+  const c=$('#content');
+  c.querySelectorAll('[data-month]').forEach(b=>b.onclick=()=>{S.config.mesAtual=b.dataset.month;save();render();});
+  c.querySelectorAll('[data-rateio]').forEach(b=>b.onclick=()=>{S.config.rateio=b.dataset.rateio;save();render();});
+  c.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>{
+    const [tipo,who]=b.dataset.add.split('|');
+    const cat=c.querySelector(`[data-cat="${tipo}-${who}"]`).value;
+    const val=+c.querySelector(`[data-val="${tipo}-${who}"]`).value;
+    if(!val)return; const m=curMonth();
+    if(tipo==='rec') S.receitas.push({id:uid(),mes:m,pessoa:who,cat,valor:val});
+    else S.despesas.push({id:uid(),mes:m,dono:who,cat,valor:val});
+    save();render();
+  });
+  c.querySelectorAll('[data-del-rec]').forEach(b=>b.onclick=()=>{S.receitas=S.receitas.filter(x=>x.id!==b.dataset.delRec);save();render();});
+  c.querySelectorAll('[data-del-desp]').forEach(b=>b.onclick=()=>{S.despesas=S.despesas.filter(x=>x.id!==b.dataset.delDesp);save();render();});
+  c.querySelectorAll('[data-del-meta]').forEach(b=>b.onclick=()=>{S.metas=S.metas.filter(x=>x.id!==b.dataset.delMeta);save();render();});
+  c.querySelectorAll('[data-add-meta]').forEach(b=>b.onclick=()=>{const k=b.dataset.addMeta;
+    const nome=c.querySelector('#mn-'+k).value,alvo=+c.querySelector('#ma-'+k).value,atual=+c.querySelector('#mc-'+k).value||0;
+    if(!nome||!alvo)return; S.metas.push({id:uid(),nome,prazo:k,alvo,atual});save();render();});
+  c.querySelectorAll('[data-del-viagem]').forEach(b=>b.onclick=()=>{S.viagens=S.viagens.filter(x=>x.id!==b.dataset.delViagem);save();render();});
+  const av=c.querySelector('[data-add-viagem]'); if(av)av.onclick=()=>{
+    const d=c.querySelector('#vg-d').value,v=+c.querySelector('#vg-v').value,m=+c.querySelector('#vg-m').value,g=+c.querySelector('#vg-g').value||0;
+    if(!d||!v||!m)return; S.viagens.push({id:uid(),destino:d,valor:v,meses:m,guardado:g});save();render();};
+  const sc=c.querySelector('[data-save-conta]'); if(sc)sc.onclick=()=>{
+    S.patrimonio.investido=+c.querySelector('#inv-in').value||0;
+    S.patrimonio.conta=+c.querySelector('#conta-in').value||0;
+    S.patrimonio.dividas=+c.querySelector('#div-in').value||0;
+    save();render();};
+  const sq=c.querySelector('[data-save-qual]'); if(sq)sq.onclick=()=>{c.querySelectorAll('[data-qual]').forEach(i=>S.qualidade[i.dataset.qual]=+i.value||0);save();render();};
+  c.querySelectorAll('[data-cen]').forEach(b=>b.onclick=()=>{cenario=b.dataset.cen;render();});
+  const ti=c.querySelector('#taxa-in'); if(ti)ti.onchange=()=>{S.invest.taxaAnual=+ti.value||0;save();render();};
+  const ti2=c.querySelector('#taxa-in2'); if(ti2)ti2.onchange=()=>{S.invest.taxaAnual=+ti2.value||0;save();render();};
+  const dyi=c.querySelector('#dy-in'); if(dyi)dyi.onchange=()=>{S.invest.dyMedio=+dyi.value||0;save();render();};
+  const sa=c.querySelector('[data-save-aloc]'); if(sa)sa.onclick=()=>{c.querySelectorAll('[data-aloc]').forEach(i=>S.invest.alocacao[i.dataset.aloc]=+i.value||0);save();render();};
+  // alocação soma indicador
+  const sum=c.querySelector('#aloc-sum');
+  if(sum){const upd=()=>{let t=0;c.querySelectorAll('[data-aloc]').forEach(i=>t+=+i.value||0);sum.textContent='Soma: '+t+'%';sum.style.color=t===100?'var(--positive)':'var(--critical)';};
+    upd();c.querySelectorAll('[data-aloc]').forEach(i=>i.oninput=upd);}
+}
+
+/* ============================ BOOT ============================ */
+$('#menuToggle').onclick=()=>{$('#sidebar').classList.toggle('open');$('#scrim').classList.toggle('show');};
+$('#scrim').onclick=()=>{$('#sidebar').classList.remove('open');$('#scrim').classList.remove('show');};
+$('#resetBtn').onclick=reset;
+$('#nav').addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b)go(b.dataset.go);});
+go('diag');
+</script>
+</body>
+</html>
