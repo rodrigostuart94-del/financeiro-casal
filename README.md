@@ -10,9 +10,7 @@ aportes, dividendos e relatórios mensais.
 
 O site é publicado gratuitamente pelo **GitHub Pages**:
 
-> https://SEU-USUARIO.github.io/financeiro-casal/
-
-(O endereço final é confirmado após o deploy.)
+> **https://rodrigostuart94-del.github.io/financeiro-casal/**
 
 ## Como usar localmente
 
