@@ -241,6 +241,23 @@ tr.row-venc td{background:rgba(177,69,54,.05)}
 .vsbars-legend{display:flex;gap:18px;justify-content:center;margin-top:12px;font-size:12px;color:var(--ink-soft)}
 .vsbars-legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:middle}
 
+/* ---------- VETERINÁRIA (área privada) ---------- */
+.vet-head{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.vet-head h2{font-family:"Fraunces",serif;font-size:26px;margin-top:3px}
+.vet-badge{display:inline-flex;align-items:center;gap:7px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);font-weight:700}
+.vet-head>button{margin-left:auto}
+.vet-tabs{flex-wrap:wrap}
+.vet-lock{display:flex;justify-content:center;padding:44px 16px}
+.vet-lock-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow-lg);padding:34px;max-width:380px;width:100%;text-align:center}
+.vet-lock-ic{font-size:40px;margin-bottom:10px}
+.vet-lock-card h2{font-size:24px;margin-bottom:6px}
+.vet-lock-card p{font-size:13.5px;color:var(--ink-soft);margin-bottom:18px}
+.vet-lock-card input{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;margin-bottom:10px;background:var(--surface2);font-size:15px}
+.vet-lock-card input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(31,87,147,.15)}
+.vet-err{color:var(--critical);font-size:12.5px;min-height:17px;margin-bottom:8px;font-weight:600}
+.vet-forgot{display:block;margin:14px auto 0;font-size:11.5px;color:var(--muted);text-decoration:underline}
+.vet-forgot:hover{color:var(--ink-soft)}
+
 /* ---------- NAVEGAÇÃO DE MESES ---------- */
 .month-nav{display:inline-flex;align-items:center;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px}
 .mnav-arrow{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:var(--ink-soft);font-size:18px;line-height:1;transition:.15s;flex:none}
@@ -360,6 +377,7 @@ const CATS = {
 };
 
 /* ============================ SEED / STATE ============================ */
+function seedVet(){ return {pin:null,receitas:[],despesas:[],contas:[],config:{margemAlvo:30}}; }
 function seed(){
   const now=new Date();
   const cm=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
@@ -373,6 +391,7 @@ function seed(){
     qualidade:{Lazer:0,Restaurantes:0,Passeios:0,Academia:0,'Saúde / bem-estar':0,'Desenvolvimento pessoal':0},
     invest:{taxaAnual:11,dyMedio:9,alocacao:{rf:50,fii:20,acoes:20,oport:10}},
     reservaMeta:6,
+    vet:seedVet(),
     config:{mesAtual:cm}
   };
 }
@@ -381,8 +400,16 @@ let S;
 try{ S = JSON.parse(localStorage.getItem(KEY)) || seed(); }catch(e){ S = seed(); }
 if(!S.contas) S.contas=[];
 if(!S.saldos) S.saldos={rodrigo:0,esther:0,casal:0};
+if(!S.vet) S.vet=seedVet();
+if(!S.vet.config) S.vet.config={margemAlvo:30};
+['receitas','despesas','contas'].forEach(k=>{ if(!Array.isArray(S.vet[k])) S.vet[k]=[]; });
 function save(){ try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){} }
-function reset(){ if(confirm('Apagar TODAS as informações e recomeçar do zero?')){ S=seed(); save(); render(); } }
+function reset(){
+  const pin=prompt('Para LIMPAR todos os dados, digite a senha de limpeza:');
+  if(pin===null) return;
+  if(pin.trim()!=='97110606'){ alert('Senha incorreta. Nenhum dado foi apagado.'); return; }
+  if(confirm('Senha correta. Apagar TODAS as informações e recomeçar do zero? Esta ação não pode ser desfeita.')){ S=seed(); vetAuth=false; vetTab='painel'; save(); render(); }
+}
 
 /* ============================ CÁLCULOS ============================ */
 function months(){ return [...new Set([...S.receitas,...S.despesas].map(x=>x.mes))].sort(); }
@@ -626,7 +653,8 @@ const ICON = {
   qualidade:'M12 21s-7-4.5-7-10a4 4 0 017-2.6A4 4 0 0119 11c0 5.5-7 10-7 10z', invest:'M3 17l6-6 4 4 7-8M14 7h6v6',
   aporte:'M12 3l9 5-9 5-9-5 9-5zM3 13l9 5 9-5M3 17l9 5 9-5', divid:'M19 5L5 19M8 6a2 2 0 11-4 0 2 2 0 014 0zm12 12a2 2 0 11-4 0 2 2 0 014 0z',
   saude:'M3 12h4l2 5 4-12 2 7h6', regras:'M5 3h14v18l-7-3-7 3V3zM9 9h6M9 13h4', rel:'M14 2H6v20h12V8l-4-6zM14 2v6h4M9 14h6M9 18h6',
-  contas:'M4 5h16v16H4zM4 9h16M8 3v4M16 3v4M9 15l2 2 4-4'
+  contas:'M4 5h16v16H4zM4 9h16M8 3v4M16 3v4M9 15l2 2 4-4',
+  vet:'M5 11a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM9 8a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM15 8a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM19 11a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM12 11c-2.2 0-4 1.9-4 4 0 1.7 1.8 2.5 4 2.5s4-.8 4-2.5c0-2.1-1.8-4-4-4z'
 };
 const VIEWS=[
   {id:'diag',grp:'Visão Geral',lbl:'Diagnóstico',title:'Diagnóstico Financeiro',render:vDiag},
@@ -644,6 +672,7 @@ const VIEWS=[
   {id:'divid',grp:'Investimentos',lbl:'Dividendos',title:'Simulador de Dividendos',render:vDivid},
   {id:'regras',grp:'Rotina',lbl:'Regras do Casal',title:'Regras Financeiras do Casal',render:vRegras},
   {id:'rel',grp:'Rotina',lbl:'Relatório Mensal',title:'Relatório Mensal',render:vRel},
+  {id:'vet',grp:'Veterinária · Esther',lbl:'🔒 Espaço da Esther',title:'Espaço Veterinário',render:vVet},
 ];
 let active='diag';
 
@@ -659,8 +688,9 @@ function buildNav(){
   $('#nav').innerHTML=html;
 }
 const SHARED_VIEWS=['metas','reserva','viagem','qualidade','invest','aporte','divid','regras'];
-function go(id){ active=id; const v=VIEWS.find(x=>x.id===id); const pf=perfil();
+function go(id){ if(id!=='vet') vetAuth=false; active=id; const v=VIEWS.find(x=>x.id===id); const pf=perfil();
   $('#crumb').textContent=(pf==='casal'?'':pNome(pf)+' · ')+v.grp; $('#viewTitle').textContent=v.title;
+  const fw=$('#fabWrap'); if(fw) fw.style.display = id==='vet' ? 'none' : '';
   buildNav(); renderPerfilSwitch();
   let body=v.render();
   if(pf!=='casal' && SHARED_VIEWS.includes(id))
@@ -1177,6 +1207,153 @@ function vRelIndiv(p){
   </div>`;
 }
 
+/* ============================ VETERINÁRIA (módulo privado da Esther) ============================ */
+let vetAuth=false, vetTab='painel';
+function vetHash(str){ let h=5381; for(let i=0;i<str.length;i++){ h=((h<<5)+h+str.charCodeAt(i))>>>0; } return 'v'+h.toString(36); }
+const VET_CATS_REC=['Consulta domiciliar','Vacinação','Exames','Procedimento','Retorno','Banho/Tosa','Outros'];
+const VET_CATS_DESP=['Combustível/Deslocamento','Medicamentos','Insumos/Materiais','Equipamentos','Marketing','Telefone/Internet','Impostos','Outros'];
+function vetRecMes(m){ return S.vet.receitas.filter(r=>r.data.slice(0,7)===m); }
+function vetDespMes(m){ return S.vet.despesas.filter(d=>d.data.slice(0,7)===m); }
+function vetSum(arr){ return arr.reduce((a,x)=>a+(+x.valor||0),0); }
+function vetContasPend(){ return S.vet.contas.filter(c=>!c.pago).sort((a,b)=>a.venc.localeCompare(b.venc)); }
+function vetMeses(){ return [...new Set([...S.vet.receitas.map(r=>r.data.slice(0,7)),...S.vet.despesas.map(d=>d.data.slice(0,7))])].sort(); }
+function vetMetrics(m){
+  const rec=vetRecMes(m), desp=vetDespMes(m);
+  const fat=vetSum(rec), custo=vetSum(desp);
+  const fixo=vetSum(desp.filter(d=>d.tipo==='fixo')), variavel=vetSum(desp.filter(d=>d.tipo!=='fixo'));
+  const lucro=fat-custo, margem=fat?lucro/fat*100:0, n=rec.length, ticket=n?fat/n:0;
+  const breakeven=(fat>variavel&&fixo>0)? fixo/(1-(variavel/fat)) : 0;
+  return {rec,desp,fat,custo,fixo,variavel,lucro,margem,n,ticket,breakeven};
+}
+
+function vVet(){
+  if(!vetAuth) return vetLock();
+  const m=curMonth();
+  const tabs=[['painel','Painel'],['receitas','Receitas'],['despesas','Custos'],['contas','Contas a Pagar'],['analise','Margem & Custos']];
+  const head=`<div class="vet-head"><div><div class="vet-badge">🐾 Espaço Veterinário · Esther</div><h2>Atendimentos em domicílio</h2></div>
+    <button class="btn ghost sm" data-vet-lock>🔒 Bloquear</button></div>
+    <div class="scenario-tabs vet-tabs">${tabs.map(([k,l])=>`<button class="${vetTab===k?'active':''}" data-vet-tab="${k}">${l}</button>`).join('')}</div>`;
+  let body = vetTab==='receitas'?vetReceitas(m) : vetTab==='despesas'?vetDespesas(m) : vetTab==='contas'?vetContasView() : vetTab==='analise'?vetAnalise(m) : vetPainel(m);
+  return `<div class="vet-wrap">${head}${body}</div>`;
+}
+function vetLock(){
+  const novo=!S.vet.pin;
+  return `<div class="vet-lock"><div class="vet-lock-card">
+    <div class="vet-lock-ic">🔒</div>
+    <h2>Espaço Veterinário</h2>
+    <p>Área privada de Esther — ${novo?'crie uma senha de acesso.':'digite sua senha para entrar.'}</p>
+    ${novo?`<input type="password" id="vet-pin1" placeholder="Nova senha (mín. 4 caracteres)"><input type="password" id="vet-pin2" placeholder="Confirmar senha">`:`<input type="password" id="vet-pin1" placeholder="Senha">`}
+    <div id="vet-err" class="vet-err"></div>
+    <button class="btn" data-vet-login style="width:100%;justify-content:center">${novo?'Criar senha e entrar':'Entrar'}</button>
+    ${novo?'':'<button class="vet-forgot" data-vet-reset>Esqueci a senha (redefinir e apagar os dados desta aba)</button>'}
+  </div></div>`;
+}
+function vetBars(){
+  const ms=vetMeses().slice(-6);
+  if(!ms.length) return '<div class="empty">Lance atendimentos e custos para ver o comparativo.</div>';
+  const data=ms.map(m=>({m,r:vetSum(vetRecMes(m)),d:vetSum(vetDespMes(m))}));
+  const max=Math.max(...data.flatMap(x=>[x.r,x.d]),1);
+  return `<div class="vsbars">${data.map(x=>`<div class="vsbar-col"><div class="vsbar-pair"><span class="vsbar r" style="height:${Math.max(x.r/max*100,x.r?3:0)}%" title="Receita ${BRL(x.r)}"></span><span class="vsbar d" style="height:${Math.max(x.d/max*100,x.d?3:0)}%" title="Custo ${BRL(x.d)}"></span></div><span class="vsbar-lbl">${MNAMES[+x.m.split('-')[1]-1]}</span></div>`).join('')}</div>
+    <div class="vsbars-legend"><span><i style="background:var(--positive)"></i>Receita</span><span><i style="background:var(--critical)"></i>Custo</span></div>`;
+}
+function vetPainel(m){
+  const k=vetMetrics(m), pend=vetContasPend();
+  const mc=k.margem>=30?'exc':k.margem>=15?'boa':k.margem>=0?'aten':'crit';
+  return `
+  <div class="grid g4" style="margin:18px 0">
+    <div class="kpi accent"><div class="lbl">Faturamento · ${mLabel(m)}</div><div class="val">${BRL(k.fat)}</div><div class="sub">${k.n} atendimento(s)</div></div>
+    <div class="kpi"><div class="lbl">Custo operacional</div><div class="val" style="font-size:26px">${BRL(k.custo)}</div><div class="sub">fixo ${BRL(k.fixo)} · variável ${BRL(k.variavel)}</div></div>
+    <div class="kpi"><div class="lbl">Lucro líquido</div><div class="val" style="font-size:26px;color:${k.lucro>=0?'var(--positive)':'var(--critical)'}">${BRL(k.lucro)}</div><div class="sub">Ticket médio ${BRL(k.ticket)}</div></div>
+    <div class="kpi"><div class="lbl">Margem de lucro</div><div class="val" style="font-size:26px">${PCT(k.margem,0)}</div><div class="sub"><span class="chip ${mc}">${rating(mc==='exc'?90:mc==='boa'?70:mc==='aten'?50:20).t}</span></div></div>
+  </div>
+  <div class="grid g2" style="grid-template-columns:1.4fr 1fr;margin-bottom:18px">
+    <div class="card"><div class="card-h"><h3>Receita × Custo (6 meses)</h3></div>${vetBars()}</div>
+    <div class="card"><div class="card-h"><h3>Contas a pagar</h3><span class="tag">${pend.length}</span></div>
+      ${pend.length?pend.slice(0,6).map(c=>{const dd=diasAte(c.venc);return `<div class="lemb-row"><span class="dot" style="background:var(--critical)"></span><div class="lemb-info"><b>${esc(c.desc||c.cat||'(sem descrição)')}</b><span>vence ${fmtData(c.venc)} ${dd<0?`<span class="cstatus venc">${Math.abs(dd)}d atrás</span>`:dd===0?'<span class="cstatus hoje">hoje</span>':`<span class="cstatus prox">${dd}d</span>`}</span></div><span class="num-cell down" style="margin-left:auto">${BRL(c.valor)}</span></div>`;}).join(''):'<div class="empty">Nenhuma conta pendente.</div>'}
+    </div>
+  </div>`;
+}
+function vetReceitas(m){
+  const list=vetRecMes(m).sort((a,b)=>b.data.localeCompare(a.data));
+  return `<div class="card" style="margin:18px 0"><div class="card-h"><h3>Atendimentos · ${mLabel(m)}</h3><span class="tag">${BRL(vetSum(list))}</span></div>
+    <table><thead><tr><th>Data</th><th>Tipo de atendimento</th><th>Tutor / Pet</th><th style="text-align:right">Valor</th><th></th></tr></thead>
+    <tbody>${list.length?list.map(r=>`<tr><td style="white-space:nowrap">${fmtData(r.data)}</td><td>${esc(r.cat)}</td><td>${esc(r.desc||'—')}</td><td class="num-cell up">${BRL(r.valor)}</td><td style="width:40px"><button class="icon-btn" data-vet-del-rec="${r.id}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></td></tr>`).join(''):'<tr><td colspan="5" class="empty">Nenhum atendimento neste mês.</td></tr>'}</tbody></table>
+    <div class="form-row" style="margin-top:14px">
+      <div class="field"><label>Data</label><input type="date" id="vr-data" value="${todayISO()}"></div>
+      <div class="field"><label>Tipo de atendimento</label><select id="vr-cat">${VET_CATS_REC.map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div class="field"><label>Tutor / Pet</label><input type="text" id="vr-desc" placeholder="Opcional"></div>
+      <div class="field"><label>Valor R$</label><input type="number" id="vr-val" placeholder="0"></div>
+      <button class="btn" data-vet-add-rec>Lançar</button></div></div>`;
+}
+function vetDespesas(m){
+  const list=vetDespMes(m).sort((a,b)=>b.data.localeCompare(a.data));
+  return `<div class="card" style="margin:18px 0"><div class="card-h"><h3>Custos operacionais · ${mLabel(m)}</h3><span class="tag">${BRL(vetSum(list))}</span></div>
+    <table><thead><tr><th>Data</th><th>Categoria</th><th>Tipo</th><th>Descrição</th><th style="text-align:right">Valor</th><th></th></tr></thead>
+    <tbody>${list.length?list.map(d=>`<tr><td style="white-space:nowrap">${fmtData(d.data)}</td><td>${esc(d.cat)}</td><td><span class="chip ${d.tipo==='fixo'?'boa':'aten'}">${d.tipo==='fixo'?'Fixo':'Variável'}</span></td><td>${esc(d.desc||'—')}</td><td class="num-cell down">${BRL(d.valor)}</td><td style="width:40px"><button class="icon-btn" data-vet-del-desp="${d.id}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></td></tr>`).join(''):'<tr><td colspan="6" class="empty">Nenhum custo neste mês.</td></tr>'}</tbody></table>
+    <div class="form-row" style="margin-top:14px">
+      <div class="field"><label>Data</label><input type="date" id="vd-data" value="${todayISO()}"></div>
+      <div class="field"><label>Categoria</label><select id="vd-cat">${VET_CATS_DESP.map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div class="field"><label>Tipo de custo</label><select id="vd-tipo"><option value="variavel">Variável</option><option value="fixo">Fixo</option></select></div>
+      <div class="field"><label>Descrição</label><input type="text" id="vd-desc" placeholder="Opcional"></div>
+      <div class="field"><label>Valor R$</label><input type="number" id="vd-val" placeholder="0"></div>
+      <button class="btn" data-vet-add-desp>Lançar</button></div></div>`;
+}
+function vetContasView(){
+  const pend=vetContasPend(), pagas=S.vet.contas.filter(c=>c.pago).sort((a,b)=>b.venc.localeCompare(a.venc));
+  const linha=c=>{const dd=diasAte(c.venc),atras=dd<0&&!c.pago;const st=c.pago?'':atras?`<span class="cstatus venc">Vencida ${Math.abs(dd)}d</span>`:dd===0?'<span class="cstatus hoje">Vence hoje</span>':`<span class="cstatus prox">em ${dd}d</span>`;
+    return `<tr class="${atras?'row-venc':''}"><td>${esc(c.desc||c.cat||'(sem descrição)')}${c.desc&&c.cat?`<span class="row-desc">${esc(c.cat)}</span>`:''}</td><td style="white-space:nowrap">${fmtData(c.venc)} ${st}</td><td class="num-cell down">${BRL(c.valor)}</td><td style="width:78px;text-align:right;white-space:nowrap"><button class="icon-btn ok" data-vet-toggle="${c.id}" title="${c.pago?'Reabrir':'Marcar como paga'}">${c.pago?'↩':'✓'}</button><button class="icon-btn" data-vet-del-conta="${c.id}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></td></tr>`;};
+  const tab=(arr,vazio)=>`<table><thead><tr><th>Descrição</th><th>Vencimento</th><th style="text-align:right">Valor</th><th></th></tr></thead><tbody>${arr.length?arr.map(linha).join(''):`<tr><td colspan="4" class="empty">${vazio}</td></tr>`}</tbody></table>`;
+  return `
+  <div class="grid g4" style="margin:18px 0">
+    <div class="kpi" style="background:var(--crit-bg);border:none"><div class="lbl" style="color:var(--critical)">Total a pagar</div><div class="val" style="font-size:24px;color:var(--critical)">${BRL(vetSum(pend))}</div><div class="sub">${pend.length} conta(s)</div></div>
+    <div class="kpi"><div class="lbl">Vencidas</div><div class="val" style="font-size:24px">${pend.filter(c=>diasAte(c.venc)<0).length}</div></div>
+    <div class="kpi"><div class="lbl">Vence hoje</div><div class="val" style="font-size:24px">${pend.filter(c=>diasAte(c.venc)===0).length}</div></div>
+    <div class="kpi"><div class="lbl">Próximos 7 dias</div><div class="val" style="font-size:24px">${pend.filter(c=>{const d=diasAte(c.venc);return d>0&&d<=7;}).length}</div></div>
+  </div>
+  <div class="card" style="margin-bottom:18px"><div class="card-h"><h3>Nova conta a pagar</h3></div>
+    <div class="form-row">
+      <div class="field"><label>Descrição</label><input id="vc-desc" type="text" placeholder="Ex.: Fornecedor de vacinas"></div>
+      <div class="field"><label>Categoria</label><input id="vc-cat" type="text" placeholder="Opcional"></div>
+      <div class="field"><label>Valor R$</label><input id="vc-val" type="number" placeholder="0"></div>
+      <div class="field"><label>Vencimento</label><input id="vc-venc" type="date" value="${todayISO()}"></div>
+      <button class="btn" data-vet-add-conta>Adicionar</button></div></div>
+  <div class="card" style="margin-bottom:18px"><div class="card-h"><h3>A pagar</h3><span class="tag">${BRL(vetSum(pend))}</span></div>${tab(pend,'Nenhuma conta pendente.')}</div>
+  ${pagas.length?`<div class="card"><div class="card-h"><h3>Pagas</h3><span class="tag">${pagas.length}</span></div>${tab(pagas,'')}</div>`:''}`;
+}
+function vetAnalise(m){
+  const k=vetMetrics(m), alvo=S.vet.config.margemAlvo;
+  const segs=[{label:'Custo fixo',pct:k.custo?k.fixo/k.custo*100:0,color:'#1f5793',v:k.fixo},{label:'Custo variável',pct:k.custo?k.variavel/k.custo*100:0,color:'#b08a3e',v:k.variavel}];
+  const mc=k.margem>=alvo?'exc':k.margem>=alvo*0.6?'boa':k.margem>=0?'aten':'crit';
+  const custoMedio=k.n?k.custo/k.n:0;
+  const precoSug=alvo<100? custoMedio/(1-alvo/100):0;
+  return `
+  <div class="grid g2" style="grid-template-columns:1fr 1fr;margin:18px 0">
+    <div class="card"><div class="card-h"><h3>Margem de lucro · ${mLabel(m)}</h3><span class="tag">meta ${PCT(alvo,0)}</span></div>
+      <div style="text-align:center;padding:10px 0"><div style="font-family:Fraunces;font-size:58px;line-height:1;color:${k.margem>=0?'var(--blue)':'var(--critical)'}">${PCT(k.margem,0)}</div>
+        <div style="margin-top:10px"><span class="chip ${mc}">${k.margem>=alvo?'Meta atingida':'Abaixo da meta'}</span></div></div>
+      <div class="bar" style="margin-top:8px;height:11px"><span style="width:${clamp(k.margem,0,100)}%"></span></div>
+      <div class="form-row" style="margin-top:16px">
+        <div class="field"><label>Meta de margem %</label><input type="number" id="vet-margem-alvo" value="${alvo}"></div>
+        <button class="btn" data-vet-save-cfg>Salvar meta</button></div></div>
+    <div class="card"><div class="card-h"><h3>Composição do custo</h3></div>
+      ${k.custo?`<div class="donut-wrap"><div>${donut(segs,170,'CUSTO',BRL(k.custo))}</div><div class="legend">${segs.map(s=>`<div class="legend-row"><span class="sw" style="background:${s.color}"></span><span>${s.label}</span><span class="lp">${BRL(s.v)}</span></div>`).join('')}</div></div>`:'<div class="empty">Sem custos lançados.</div>'}
+    </div>
+  </div>
+  <div class="grid g3" style="margin-bottom:18px">
+    <div class="kpi"><div class="lbl">Ponto de equilíbrio</div><div class="val" style="font-size:24px">${k.breakeven?BRL(k.breakeven):'—'}</div><div class="sub">faturamento p/ cobrir custos</div></div>
+    <div class="kpi"><div class="lbl">Custo médio / atendimento</div><div class="val" style="font-size:24px">${BRL(custoMedio)}</div><div class="sub">${k.n} atendimento(s)</div></div>
+    <div class="kpi accent"><div class="lbl">Preço sugerido / atendimento</div><div class="val" style="font-size:24px">${precoSug?BRL(precoSug):'—'}</div><div class="sub">p/ margem de ${PCT(alvo,0)}</div></div>
+  </div>
+  <div class="card"><div class="card-h"><h3>Evolução do lucro mensal</h3></div>${vetLucroLine()}</div>
+  <div class="disclaimer" style="margin-top:14px">Indicadores calculados sobre os lançamentos da veterinária. O preço sugerido é uma referência de markup sobre o custo médio por atendimento — ajuste conforme o mercado e o valor percebido pelo cliente.</div>`;
+}
+function vetLucroLine(){
+  const ms=vetMeses().slice(-6);
+  if(ms.length<2) return '<div class="empty">Lance ao menos dois meses para ver a evolução do lucro.</div>';
+  const vals=ms.map(m=>vetSum(vetRecMes(m))-vetSum(vetDespMes(m)));
+  return line(vals)+`<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:6px">${ms.map(m=>`<span>${mLabel(m)}</span>`).join('')}</div>`;
+}
+
 /* ============================ FORM / SELECT HELPERS ============================ */
 function addForm(tipo,who,cats){
   return `<div class="form-row" style="margin-top:14px">
@@ -1226,6 +1403,34 @@ function attachViewEvents(){
   const pl=c.querySelector('[data-pedir-lembrete]'); if(pl)pl.onclick=pedirLembrete;
   const gc=c.querySelector('[data-go-contas]'); if(gc)gc.onclick=()=>go('contas');
   const ss=c.querySelector('[data-save-saldo]'); if(ss)ss.onclick=()=>{c.querySelectorAll('[data-saldo]').forEach(i=>S.saldos[i.dataset.saldo]=+i.value||0);save();render();};
+  // ----- VETERINÁRIA -----
+  const vl=c.querySelector('[data-vet-login]'); if(vl)vl.onclick=()=>{
+    const p1=c.querySelector('#vet-pin1').value, err=c.querySelector('#vet-err');
+    if(!S.vet.pin){ const p2=c.querySelector('#vet-pin2').value;
+      if(p1.length<4){err.textContent='Use ao menos 4 caracteres.';return;}
+      if(p1!==p2){err.textContent='As senhas não conferem.';return;}
+      S.vet.pin=vetHash(p1); save(); vetAuth=true; vetTab='painel'; render();
+    } else { if(vetHash(p1)===S.vet.pin){ vetAuth=true; vetTab='painel'; render(); } else err.textContent='Senha incorreta.'; }
+  };
+  const vk=c.querySelector('#vet-pin1'); if(vk)vk.onkeydown=e=>{ if(e.key==='Enter') c.querySelector('[data-vet-login]').click(); };
+  const vrst=c.querySelector('[data-vet-reset]'); if(vrst)vrst.onclick=()=>{ if(confirm('Isso vai APAGAR todos os dados da veterinária e remover a senha. Continuar?')){ S.vet=seedVet(); save(); render(); } };
+  const vlk=c.querySelector('[data-vet-lock]'); if(vlk)vlk.onclick=()=>{ vetAuth=false; render(); };
+  c.querySelectorAll('[data-vet-tab]').forEach(b=>b.onclick=()=>{ vetTab=b.dataset.vetTab; render(); });
+  const vAddR=c.querySelector('[data-vet-add-rec]'); if(vAddR)vAddR.onclick=()=>{
+    const data=c.querySelector('#vr-data').value, cat=c.querySelector('#vr-cat').value, desc=c.querySelector('#vr-desc').value.trim(), val=+c.querySelector('#vr-val').value;
+    if(!val||!data){alert('Informe data e valor.');return;} S.vet.receitas.push({id:uid(),data,cat,desc,valor:val}); save(); render(); };
+  c.querySelectorAll('[data-vet-del-rec]').forEach(b=>b.onclick=()=>{S.vet.receitas=S.vet.receitas.filter(x=>x.id!==b.dataset.vetDelRec);save();render();});
+  const vAddD=c.querySelector('[data-vet-add-desp]'); if(vAddD)vAddD.onclick=()=>{
+    const data=c.querySelector('#vd-data').value, cat=c.querySelector('#vd-cat').value, tipo=c.querySelector('#vd-tipo').value, desc=c.querySelector('#vd-desc').value.trim(), val=+c.querySelector('#vd-val').value;
+    if(!val||!data){alert('Informe data e valor.');return;} S.vet.despesas.push({id:uid(),data,cat,tipo,desc,valor:val}); save(); render(); };
+  c.querySelectorAll('[data-vet-del-desp]').forEach(b=>b.onclick=()=>{S.vet.despesas=S.vet.despesas.filter(x=>x.id!==b.dataset.vetDelDesp);save();render();});
+  const vAddC=c.querySelector('[data-vet-add-conta]'); if(vAddC)vAddC.onclick=()=>{
+    const desc=c.querySelector('#vc-desc').value.trim(), cat=c.querySelector('#vc-cat').value.trim(), val=+c.querySelector('#vc-val').value, venc=c.querySelector('#vc-venc').value;
+    if(!val||!venc){alert('Informe valor e vencimento.');return;} if(!desc&&!cat){alert('Informe uma descrição.');return;}
+    S.vet.contas.push({id:uid(),tipo:'pagar',desc,cat,valor:val,venc,pago:false}); save(); render(); };
+  c.querySelectorAll('[data-vet-toggle]').forEach(b=>b.onclick=()=>{const ct=S.vet.contas.find(x=>x.id===b.dataset.vetToggle);if(ct){ct.pago=!ct.pago;save();render();}});
+  c.querySelectorAll('[data-vet-del-conta]').forEach(b=>b.onclick=()=>{if(confirm('Excluir esta conta?')){S.vet.contas=S.vet.contas.filter(x=>x.id!==b.dataset.vetDelConta);save();render();}});
+  const vCfg=c.querySelector('[data-vet-save-cfg]'); if(vCfg)vCfg.onclick=()=>{S.vet.config.margemAlvo=+c.querySelector('#vet-margem-alvo').value||0;save();render();};
   c.querySelectorAll('[data-del-meta]').forEach(b=>b.onclick=()=>{S.metas=S.metas.filter(x=>x.id!==b.dataset.delMeta);save();render();});
   c.querySelectorAll('[data-add-meta]').forEach(b=>b.onclick=()=>{const k=b.dataset.addMeta;
     const nome=c.querySelector('#mn-'+k).value,alvo=+c.querySelector('#ma-'+k).value,atual=+c.querySelector('#mc-'+k).value||0;
