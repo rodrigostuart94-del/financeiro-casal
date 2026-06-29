@@ -274,6 +274,11 @@ tr.row-venc td{background:rgba(177,69,54,.05)}
 .est-actions{display:flex;gap:6px;align-items:center;justify-content:flex-end;flex-wrap:nowrap}
 .est-actions input{width:60px;padding:5px 7px;border:1px solid var(--line);border-radius:7px;flex:none}
 .est-actions .btn.sm{white-space:nowrap;flex:none}
+.vr-linetotal{margin-top:10px;text-align:right;font-size:13.5px;color:var(--ink-soft)}
+.vr-linetotal b{color:var(--ink);font-variant-numeric:tabular-nums}
+/* fitment geral de formularios: botoes nao encolhem nem sobrepoem */
+.form-row .btn{white-space:nowrap;align-self:end;height:fit-content}
+.form-row>.field{min-width:0}
 .vet-lock{display:flex;justify-content:center;padding:44px 16px}
 .vet-lock-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow-lg);padding:34px;max-width:380px;width:100%;text-align:center}
 .vet-lock-ic{font-size:40px;margin-bottom:10px}
@@ -1383,8 +1388,10 @@ function vetReceitas(m){
         <div class="field" style="min-width:200px"><label>Adicionar serviço / produto</label><select id="vr-item">${opts}</select></div>
         <div class="field" style="max-width:90px"><label>Qtd</label><input type="number" min="1" step="1" id="vr-qtd" value="1"></div>
         <div class="field"><label>Valor unitário R$</label><input type="number" id="vr-val" placeholder="auto"></div>
-        <button class="btn ghost" data-vet-cart-add>+ Adicionar item</button>
+        <div class="field"><label>Total do item</label><input type="text" id="vr-linetotal-in" value="R$ 0" readonly tabindex="-1" style="background:var(--surface2);font-weight:700"></div>
+        <button class="btn ghost" data-vet-cart-add style="white-space:nowrap">+ Adicionar item</button>
       </div>
+      <div id="vr-linetotal" class="vr-linetotal">Unitário <b>R$ 0</b> × 1 = <b>R$ 0</b></div>
     </div>
     ${vetCart.itens.length?`<table style="margin-top:14px"><thead><tr><th>Item</th><th class="num-cell">Qtd</th><th class="num-cell">Unitário</th><th class="num-cell">Subtotal</th><th></th></tr></thead><tbody>
       ${vetCart.itens.map((i,idx)=>`<tr><td>${esc(i.nome)}</td><td class="num-cell">${i.qtd}</td><td class="num-cell">${BRL(i.valorUnit)}</td><td class="num-cell">${BRL(i.valorUnit*i.qtd)}</td><td style="width:36px"><button class="icon-btn" data-vet-cart-del="${idx}" title="Remover"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg></button></td></tr>`).join('')}
@@ -1615,8 +1622,17 @@ function attachViewEvents(){
   const vrst=c.querySelector('[data-vet-reset]'); if(vrst)vrst.onclick=()=>{ if(confirm('Isso vai APAGAR todos os dados da veterinária e remover a senha. Continuar?')){ S.vet=seedVet(); save(); render(); } };
   const vlk=c.querySelector('[data-vet-lock]'); if(vlk)vlk.onclick=()=>{ vetAuth=false; render(); };
   c.querySelectorAll('[data-vet-tab]').forEach(b=>b.onclick=()=>{ vetTab=b.dataset.vetTab; vetEditItem=null; render(); });
-  // auto-preencher valor unitário ao escolher serviço do catálogo
-  const vrItem=c.querySelector('#vr-item'); if(vrItem)vrItem.onchange=()=>{ const op=vrItem.selectedOptions[0]; const vv=c.querySelector('#vr-val'); if(op&&op.value&&vv&&!vv.value) vv.value=op.dataset.preco||''; };
+  // cálculo ao vivo: valor unitário × quantidade = total do item
+  const calcLine=()=>{ const sel=c.querySelector('#vr-item'); if(!sel)return; const op=sel.selectedOptions[0];
+    const vEl=c.querySelector('#vr-val'); let unit=+vEl.value; if(!vEl.value && op && op.value) unit=+op.dataset.preco||0;
+    const qtd=Math.max(1,Math.round(+c.querySelector('#vr-qtd').value||1));
+    const lbl=c.querySelector('#vr-linetotal'); if(lbl) lbl.innerHTML=`Unitário <b>${BRL(unit)}</b> × ${qtd} = <b>${BRL(unit*qtd)}</b>`;
+    const inp=c.querySelector('#vr-linetotal-in'); if(inp) inp.value=BRL(unit*qtd);
+  };
+  const vrItem=c.querySelector('#vr-item'); if(vrItem)vrItem.onchange=()=>{ const op=vrItem.selectedOptions[0]; const vv=c.querySelector('#vr-val'); if(op&&op.value&&vv&&!vv.value) vv.value=op.dataset.preco||''; calcLine(); };
+  const vrQtd=c.querySelector('#vr-qtd'); if(vrQtd)vrQtd.oninput=calcLine;
+  const vrVal=c.querySelector('#vr-val'); if(vrVal)vrVal.oninput=calcLine;
+  if(c.querySelector('#vr-linetotal')) calcLine();
   const vCartAdd=c.querySelector('[data-vet-cart-add]'); if(vCartAdd)vCartAdd.onclick=()=>{
     persistCart();
     const itemId=c.querySelector('#vr-item').value, qtd=Math.max(1,Math.round(+c.querySelector('#vr-qtd').value||1));
