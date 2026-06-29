@@ -30,9 +30,25 @@
   --pos-bg:#e3efe6;
   --shadow:0 1px 2px rgba(20,40,70,.05),0 8px 28px -12px rgba(20,40,70,.20);
   --shadow-lg:0 30px 70px -30px rgba(20,61,107,.35);
+  --topbar-bg:rgba(241,237,228,.82);
   --r:18px;
   --r-sm:12px;
 }
+[data-theme="dark"]{
+  --bg:#0e131a; --bg2:#121a23; --surface:#19212c; --surface2:#222c39;
+  --ink:#e8edf4; --ink-soft:#aebac9; --muted:#7c8a9c;
+  --line:#2b3644; --line-soft:#232e3b;
+  --blue:#4a8fd6; --blue-d:#2c5e96; --gold:#c39a4e; --gold-soft:#d8bd83;
+  --positive:#46b07e; --warning:#d49a3e; --critical:#d96553;
+  --crit-bg:#3a241f; --warn-bg:#332a18; --pos-bg:#1d3328;
+  --topbar-bg:rgba(16,21,28,.85);
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 28px -12px rgba(0,0,0,.6);
+  --shadow-lg:0 30px 70px -30px rgba(0,0,0,.7);
+}
+[data-theme="dark"] .perfil-switch button.active{background:var(--surface2);color:var(--ink)}
+[data-theme="dark"] .qseg button.active{background:var(--surface2);color:var(--ink)}
+[data-theme="dark"] .chip.boa,[data-theme="dark"] .cstatus.prox{background:#1d2b3c;color:#7fb0e6}
+[data-theme="dark"] tr.row-venc td{background:rgba(217,101,83,.10)}
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{
@@ -77,7 +93,7 @@ input,select{font-family:inherit;font-size:14px}
 .main{min-width:0;display:flex;flex-direction:column}
 .topbar{
   position:sticky;top:0;z-index:15;backdrop-filter:blur(10px);
-  background:rgba(241,237,228,.82);border-bottom:1px solid var(--line);
+  background:var(--topbar-bg);border-bottom:1px solid var(--line);
   padding:16px 38px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;
 }
 .topbar .crumb{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:700}
@@ -332,6 +348,10 @@ tr.row-venc td{background:rgba(177,69,54,.05)}
         <div class="month-nav" id="monthNav"></div>
         <div class="perfil-switch" id="perfilSwitch"></div>
         <span class="pill" id="rendaPill">Renda · <b id="topRenda">R$ 0</b></span>
+        <button class="btn ghost sm" id="themeBtn" title="Alternar tema claro/escuro" aria-label="Alternar tema">🌙</button>
+        <button class="btn ghost sm" id="backupBtn" title="Baixar backup de todos os dados">⬇ Backup</button>
+        <button class="btn ghost sm" id="importBtn" title="Restaurar a partir de um backup">⬆ Importar</button>
+        <input type="file" id="importFile" accept="application/json,.json" style="display:none">
         <button class="btn ghost sm" id="resetBtn">Limpar dados</button>
       </div>
     </div>
@@ -407,19 +427,54 @@ function seed(){
   };
 }
 const KEY='manual_fin_rodrigo_esther_v2';
+/* migrate apenas COMPLETA campos faltantes — nunca apaga dados já existentes */
+function migrate(st){
+  if(!st || typeof st!=='object') st=seed();
+  const now=new Date(), cm=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  if(!st.config) st.config={mesAtual:cm};
+  if(!st.config.theme) st.config.theme='light';
+  if(!st.profile) st.profile=seed().profile;
+  if(!st.patrimonio) st.patrimonio={investido:0,conta:0,dividas:0};
+  if(!Array.isArray(st.receitas)) st.receitas=[];
+  if(!Array.isArray(st.despesas)) st.despesas=[];
+  if(!Array.isArray(st.metas)) st.metas=[];
+  if(!Array.isArray(st.viagens)) st.viagens=[];
+  if(!st.qualidade) st.qualidade=seed().qualidade;
+  if(!st.invest) st.invest=seed().invest;
+  if(!st.contas) st.contas=[];
+  if(!st.saldos) st.saldos={rodrigo:0,esther:0,casal:0};
+  if(!st.vet) st.vet=seedVet();
+  if(!st.vet.config) st.vet.config={margemAlvo:30};
+  ['receitas','despesas','contas','catalogo','estoque'].forEach(k=>{ if(!Array.isArray(st.vet[k])) st.vet[k]=[]; });
+  return st;
+}
 let S;
 try{ S = JSON.parse(localStorage.getItem(KEY)) || seed(); }catch(e){ S = seed(); }
-if(!S.contas) S.contas=[];
-if(!S.saldos) S.saldos={rodrigo:0,esther:0,casal:0};
-if(!S.vet) S.vet=seedVet();
-if(!S.vet.config) S.vet.config={margemAlvo:30};
-['receitas','despesas','contas','catalogo','estoque'].forEach(k=>{ if(!Array.isArray(S.vet[k])) S.vet[k]=[]; });
+S = migrate(S);
 function save(){ try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){} }
 function reset(){
   const pin=prompt('Para LIMPAR todos os dados, digite a senha de limpeza:');
   if(pin===null) return;
   if(pin.trim()!=='97110606'){ alert('Senha incorreta. Nenhum dado foi apagado.'); return; }
-  if(confirm('Senha correta. Apagar TODAS as informações e recomeçar do zero? Esta ação não pode ser desfeita.')){ S=seed(); vetAuth=false; vetTab='painel'; save(); render(); }
+  if(confirm('Senha correta. Apagar TODAS as informações e recomeçar do zero? Esta ação não pode ser desfeita.')){ const t=S.config.theme; S=seed(); S.config.theme=t; vetAuth=false; vetTab='painel'; save(); applyTheme(); render(); }
+}
+/* ---------- TEMA (claro/escuro) ---------- */
+function applyTheme(){ const dark=S.config.theme==='dark'; document.documentElement.dataset.theme=dark?'dark':'light'; const b=document.getElementById('themeBtn'); if(b)b.textContent=dark?'☀️':'🌙'; }
+/* ---------- BACKUP (exportar / importar) ---------- */
+function exportBackup(){
+  try{
+    const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download='financeiro-backup-'+todayISO()+'.json'; document.body.appendChild(a); a.click();
+    setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},100);
+  }catch(e){ alert('Não foi possível gerar o backup.'); }
+}
+function importBackup(file){
+  const fr=new FileReader();
+  fr.onload=()=>{ try{ const data=JSON.parse(fr.result); if(!data||typeof data!=='object') throw 0;
+    if(confirm('Restaurar este backup? Os dados atuais serão SUBSTITUÍDOS pelos do arquivo.')){ S=migrate(data); vetAuth=false; save(); applyTheme(); render(); alert('Backup restaurado com sucesso!'); }
+  }catch(e){ alert('Arquivo de backup inválido.'); } };
+  fr.readAsText(file);
 }
 
 /* ============================ CÁLCULOS ============================ */
@@ -518,8 +573,8 @@ function donut(segs,size=180,top='CARTEIRA',bottom='100%'){
   segs.forEach(s=>{ const len=c*s.pct/100;
     parts+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${s.color}" stroke-width="22" stroke-linecap="round" stroke-dasharray="${len-3} ${c-len+3}" stroke-dashoffset="${-off}" transform="rotate(-90 ${cx} ${cy})"/>`; off+=len; });
   return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">${parts}
-    <text x="${cx}" y="${cy-4}" text-anchor="middle" font-family="Fraunces" font-size="13" fill="#8a8f84" letter-spacing="1">${top}</text>
-    <text x="${cx}" y="${cy+18}" text-anchor="middle" font-family="Fraunces" font-size="${bottom.length>7?15:20}" fill="#19251f">${bottom}</text></svg>`;
+    <text x="${cx}" y="${cy-4}" text-anchor="middle" font-family="Fraunces" font-size="13" fill="var(--muted)" letter-spacing="1">${top}</text>
+    <text x="${cx}" y="${cy+18}" text-anchor="middle" font-family="Fraunces" font-size="${bottom.length>7?15:20}" fill="var(--ink)">${bottom}</text></svg>`;
 }
 /* barras comparativas receitas x despesas por mês */
 function vsBars(){
@@ -1219,7 +1274,7 @@ function vRelIndiv(p){
 }
 
 /* ============================ VETERINÁRIA (módulo privado da Esther) ============================ */
-let vetAuth=false, vetTab='painel';
+let vetAuth=false, vetTab='painel', vetEditItem=null;
 function vetHash(str){ let h=5381; for(let i=0;i<str.length;i++){ h=((h<<5)+h+str.charCodeAt(i))>>>0; } return 'v'+h.toString(36); }
 const VET_CATS_REC=['Consulta domiciliar','Vacinação','Exames','Procedimento','Retorno','Banho/Tosa','Outros'];
 const VET_CATS_DESP=['Combustível/Deslocamento','Medicamentos','Insumos/Materiais','Equipamentos','Marketing','Telefone/Internet','Impostos','Outros'];
@@ -1337,8 +1392,21 @@ function vetCatalogo(){
   const cat=S.vet.catalogo, est=S.vet.estoque;
   const matOpts=est.map(e=>`<option value="${e.id}">${esc(e.nome)} (${BRL(e.custoUnit||0)}/${esc(e.unidade||'un')})</option>`).join('');
   const card=it=>{ const custo=vetItemCusto(it), marg=vetItemMargem(it), mc=marg>=30?'exc':marg>=15?'boa':marg>=0?'aten':'crit';
+    if(vetEditItem===it.id){
+      return `<div class="card" style="margin-bottom:14px;border-color:var(--blue)"><div class="card-h"><h3 style="font-size:17px">Editar item</h3></div>
+        <div class="form-row">
+          <div class="field"><label>Tipo</label><select id="vie-tipo"><option value="servico" ${it.tipo==='servico'?'selected':''}>Serviço</option><option value="produto" ${it.tipo==='produto'?'selected':''}>Produto</option></select></div>
+          <div class="field"><label>Nome</label><input type="text" id="vie-nome" value="${esc(it.nome)}"></div>
+          <div class="field" style="min-width:180px"><label>Descrição</label><input type="text" id="vie-desc" value="${esc(it.descricao||'')}"></div>
+          <div class="field"><label>Custo manual R$</label><input type="number" id="vie-custo" value="${it.custoManual||0}"></div>
+          <div class="field"><label>Valor de venda R$</label><input type="number" id="vie-preco" value="${it.preco||0}"></div>
+          <button class="btn" data-vet-save-item="${it.id}">Salvar</button>
+          <button class="btn ghost" data-vet-cancel-edit>Cancelar</button></div>
+        <p style="font-size:12px;color:var(--muted);margin-top:10px">Os materiais vinculados são editados nos cards (após salvar).</p></div>`;
+    }
     return `<div class="card" style="margin-bottom:14px"><div class="card-h"><span class="chip ${it.tipo==='servico'?'boa':'aten'}">${it.tipo==='servico'?'Serviço':'Produto'}</span><h3 style="font-size:17px">${esc(it.nome)}</h3>
-      <button class="icon-btn" style="margin-left:auto" data-vet-del-item="${it.id}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></div>
+      <button class="icon-btn" style="margin-left:auto" data-vet-edit-item="${it.id}" title="Editar"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg></button>
+      <button class="icon-btn" data-vet-del-item="${it.id}" title="Excluir"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></div>
       ${it.descricao?`<p style="font-size:13px;color:var(--ink-soft);margin-bottom:10px">${esc(it.descricao)}</p>`:''}
       <div class="grid g4" style="gap:10px;margin-bottom:12px">
         <div class="mini-kpi"><span>${BRL(custo)}</span><small>Custo</small></div>
@@ -1518,7 +1586,7 @@ function attachViewEvents(){
   const vk=c.querySelector('#vet-pin1'); if(vk)vk.onkeydown=e=>{ if(e.key==='Enter') c.querySelector('[data-vet-login]').click(); };
   const vrst=c.querySelector('[data-vet-reset]'); if(vrst)vrst.onclick=()=>{ if(confirm('Isso vai APAGAR todos os dados da veterinária e remover a senha. Continuar?')){ S.vet=seedVet(); save(); render(); } };
   const vlk=c.querySelector('[data-vet-lock]'); if(vlk)vlk.onclick=()=>{ vetAuth=false; render(); };
-  c.querySelectorAll('[data-vet-tab]').forEach(b=>b.onclick=()=>{ vetTab=b.dataset.vetTab; render(); });
+  c.querySelectorAll('[data-vet-tab]').forEach(b=>b.onclick=()=>{ vetTab=b.dataset.vetTab; vetEditItem=null; render(); });
   // auto-preencher valor ao escolher serviço do catálogo
   const vrItem=c.querySelector('#vr-item'); if(vrItem)vrItem.onchange=()=>{ const op=vrItem.selectedOptions[0]; const vv=c.querySelector('#vr-val'); if(op&&op.value&&vv&&!vv.value) vv.value=op.dataset.preco||''; };
   const vAddR=c.querySelector('[data-vet-add-rec]'); if(vAddR)vAddR.onclick=()=>{
@@ -1544,7 +1612,14 @@ function attachViewEvents(){
       custoManual=+c.querySelector('#vi-custo').value||0, preco=+c.querySelector('#vi-preco').value||0;
     if(!nome){alert('Informe o nome do produto/serviço.');return;}
     S.vet.catalogo.push({id:uid(),tipo,nome,descricao,custoManual,preco,materiais:[]}); save(); render(); };
-  c.querySelectorAll('[data-vet-del-item]').forEach(b=>b.onclick=()=>{if(confirm('Excluir este item do catálogo?')){S.vet.catalogo=S.vet.catalogo.filter(x=>x.id!==b.dataset.vetDelItem);save();render();}});
+  c.querySelectorAll('[data-vet-del-item]').forEach(b=>b.onclick=()=>{if(confirm('Excluir este item do catálogo?')){S.vet.catalogo=S.vet.catalogo.filter(x=>x.id!==b.dataset.vetDelItem);if(vetEditItem===b.dataset.vetDelItem)vetEditItem=null;save();render();}});
+  c.querySelectorAll('[data-vet-edit-item]').forEach(b=>b.onclick=()=>{ vetEditItem=b.dataset.vetEditItem; render(); });
+  const vCancelE=c.querySelector('[data-vet-cancel-edit]'); if(vCancelE)vCancelE.onclick=()=>{ vetEditItem=null; render(); };
+  const vSaveI=c.querySelector('[data-vet-save-item]'); if(vSaveI)vSaveI.onclick=()=>{ const it=vetItem(vSaveI.dataset.vetSaveItem);
+    if(it){ const nome=c.querySelector('#vie-nome').value.trim(); if(!nome){alert('Informe o nome.');return;}
+      it.tipo=c.querySelector('#vie-tipo').value; it.nome=nome; it.descricao=c.querySelector('#vie-desc').value.trim();
+      it.custoManual=+c.querySelector('#vie-custo').value||0; it.preco=+c.querySelector('#vie-preco').value||0; }
+    vetEditItem=null; save(); render(); };
   c.querySelectorAll('[data-vet-add-mat]').forEach(b=>b.onclick=()=>{ const id=b.dataset.vetAddMat, it=vetItem(id);
     const estoqueId=c.querySelector(`[data-vet-mat-sel="${id}"]`).value, qtd=+c.querySelector(`[data-vet-mat-qtd="${id}"]`).value||0;
     if(!estoqueId||!qtd){alert('Selecione o material e a quantidade.');return;}
@@ -1646,7 +1721,12 @@ $('#modalScrim').onclick=closeQuick;
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeQuick();$('#fabWrap').classList.remove('open');}});
 $('#scrim').onclick=()=>{$('#sidebar').classList.remove('open');$('#scrim').classList.remove('show');};
 $('#resetBtn').onclick=reset;
+$('#themeBtn').onclick=()=>{ S.config.theme = S.config.theme==='dark'?'light':'dark'; save(); applyTheme(); };
+$('#backupBtn').onclick=exportBackup;
+$('#importBtn').onclick=()=>$('#importFile').click();
+$('#importFile').onchange=e=>{ if(e.target.files&&e.target.files[0]) importBackup(e.target.files[0]); e.target.value=''; };
 $('#nav').addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b)go(b.dataset.go);});
+applyTheme();
 go('diag');
 dispararLembretes(false);
 </script>
