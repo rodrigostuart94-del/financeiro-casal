@@ -121,7 +121,7 @@ input,select{font-family:inherit;font-size:14px}
 /* KPI */
 .kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;box-shadow:var(--shadow);position:relative;overflow:hidden}
 .kpi .lbl{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700}
-.kpi .val{font-family:"Fraunces",serif;font-size:30px;margin-top:8px;font-variant-numeric:tabular-nums;line-height:1}
+.kpi .val{font-family:"Fraunces",serif;font-size:30px;margin-top:8px;font-variant-numeric:tabular-nums;line-height:1;overflow-wrap:break-word;min-width:0}
 .kpi .sub{font-size:12.5px;color:var(--ink-soft);margin-top:7px}
 .kpi .corner{position:absolute;top:14px;right:16px;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--surface2)}
 .kpi.accent{background:linear-gradient(160deg,var(--blue),var(--blue-d));color:#fff;border:none}
@@ -197,6 +197,11 @@ tr:hover td{background:var(--surface2)}
 .seg button{padding:7px 13px;font-size:12.5px;font-weight:600;color:var(--ink-soft)}
 .seg button.active{background:var(--blue);color:#fff}
 
+@media(max-width:1024px){
+  /* tabelas largas rolam horizontalmente em vez de sobrepor o conteúdo */
+  .content table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
+  .content table .row-desc{white-space:normal}
+}
 @media(max-width:920px){
   .app{grid-template-columns:1fr}
   .sidebar{position:fixed;left:0;top:0;width:262px;transform:translateX(-100%);transition:transform .3s;box-shadow:var(--shadow-lg)}
@@ -208,12 +213,15 @@ tr:hover td{background:var(--surface2)}
   .scrim.show{display:block}
   #rendaPill{display:none}
   .perfil-switch button{padding:6px 9px;font-size:11.5px}
+  .topbar{gap:10px}
+  .topbar .right{gap:8px}
+  .grid[style*="grid-template-columns"]{grid-template-columns:1fr !important}
 }
 @media(min-width:921px){.scrim{display:none}}
 
 /* ---------- DASHBOARD: LEMBRETES / CONTAS / GRÁFICOS ---------- */
 .mini-kpi{background:var(--surface2);border:1px solid var(--line-soft);border-radius:13px;padding:13px 15px;text-align:center}
-.mini-kpi span{display:block;font-family:"Fraunces",serif;font-size:23px;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
+.mini-kpi span{display:block;font-family:"Fraunces",serif;font-size:23px;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums;overflow-wrap:break-word}
 .mini-kpi small{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-top:6px}
 .mini-kpi.crit{background:var(--crit-bg);border-color:#ecc6bd}.mini-kpi.crit span{color:var(--critical)}
 .mini-kpi.pos{background:var(--pos-bg);border-color:#bcd9c5}.mini-kpi.pos span{color:var(--positive)}
@@ -246,7 +254,10 @@ tr.row-venc td{background:rgba(177,69,54,.05)}
 .vet-head h2{font-family:"Fraunces",serif;font-size:26px;margin-top:3px}
 .vet-badge{display:inline-flex;align-items:center;gap:7px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);font-weight:700}
 .vet-head>button{margin-left:auto}
-.vet-tabs{flex-wrap:wrap}
+.vet-tabs{display:flex;flex-wrap:wrap}
+.est-actions{display:flex;gap:6px;align-items:center;justify-content:flex-end;flex-wrap:nowrap}
+.est-actions input{width:60px;padding:5px 7px;border:1px solid var(--line);border-radius:7px;flex:none}
+.est-actions .btn.sm{white-space:nowrap;flex:none}
 .vet-lock{display:flex;justify-content:center;padding:44px 16px}
 .vet-lock-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow-lg);padding:34px;max-width:380px;width:100%;text-align:center}
 .vet-lock-ic{font-size:40px;margin-bottom:10px}
@@ -377,7 +388,7 @@ const CATS = {
 };
 
 /* ============================ SEED / STATE ============================ */
-function seedVet(){ return {pin:null,receitas:[],despesas:[],contas:[],config:{margemAlvo:30}}; }
+function seedVet(){ return {pin:null,receitas:[],despesas:[],contas:[],catalogo:[],estoque:[],config:{margemAlvo:30}}; }
 function seed(){
   const now=new Date();
   const cm=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
@@ -402,7 +413,7 @@ if(!S.contas) S.contas=[];
 if(!S.saldos) S.saldos={rodrigo:0,esther:0,casal:0};
 if(!S.vet) S.vet=seedVet();
 if(!S.vet.config) S.vet.config={margemAlvo:30};
-['receitas','despesas','contas'].forEach(k=>{ if(!Array.isArray(S.vet[k])) S.vet[k]=[]; });
+['receitas','despesas','contas','catalogo','estoque'].forEach(k=>{ if(!Array.isArray(S.vet[k])) S.vet[k]=[]; });
 function save(){ try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){} }
 function reset(){
   const pin=prompt('Para LIMPAR todos os dados, digite a senha de limpeza:');
@@ -1215,25 +1226,37 @@ const VET_CATS_DESP=['Combustível/Deslocamento','Medicamentos','Insumos/Materia
 function vetRecMes(m){ return S.vet.receitas.filter(r=>r.data.slice(0,7)===m); }
 function vetDespMes(m){ return S.vet.despesas.filter(d=>d.data.slice(0,7)===m); }
 function vetSum(arr){ return arr.reduce((a,x)=>a+(+x.valor||0),0); }
+function recLiq(r){ return (+r.valor||0)-(+r.desconto||0); }
+function despLiq(d){ return (+d.valor||0)-(+d.desconto||0); }
 function vetContasPend(){ return S.vet.contas.filter(c=>!c.pago).sort((a,b)=>a.venc.localeCompare(b.venc)); }
 function vetMeses(){ return [...new Set([...S.vet.receitas.map(r=>r.data.slice(0,7)),...S.vet.despesas.map(d=>d.data.slice(0,7))])].sort(); }
+/* catálogo e estoque */
+function vetItem(id){ return S.vet.catalogo.find(x=>x.id===id); }
+function vetMat(id){ return S.vet.estoque.find(x=>x.id===id); }
+function vetItemCusto(item){ if(!item)return 0; let c=+item.custoManual||0; (item.materiais||[]).forEach(mm=>{ const e=vetMat(mm.estoqueId); if(e) c+=(+e.custoUnit||0)*(+mm.qtd||0); }); return c; }
+function vetItemMargem(item){ const p=+item.preco||0, c=vetItemCusto(item); return p?(p-c)/p*100:0; }
+function vetEstoqueBaixo(){ return S.vet.estoque.filter(e=>(+e.qtd||0)<=(+e.qtdMin||0)); }
 function vetMetrics(m){
   const rec=vetRecMes(m), desp=vetDespMes(m);
-  const fat=vetSum(rec), custo=vetSum(desp);
-  const fixo=vetSum(desp.filter(d=>d.tipo==='fixo')), variavel=vetSum(desp.filter(d=>d.tipo!=='fixo'));
+  const fat=rec.reduce((a,r)=>a+recLiq(r),0);
+  const custoServ=rec.reduce((a,r)=>a+(+r.custo||0),0);
+  const despFixo=desp.filter(d=>d.tipo==='fixo').reduce((a,d)=>a+despLiq(d),0);
+  const despVar=desp.filter(d=>d.tipo!=='fixo').reduce((a,d)=>a+despLiq(d),0);
+  const fixo=despFixo, variavel=despVar+custoServ, custo=fixo+variavel;
   const lucro=fat-custo, margem=fat?lucro/fat*100:0, n=rec.length, ticket=n?fat/n:0;
+  const descConc=rec.reduce((a,r)=>a+(+r.desconto||0),0), descObt=desp.reduce((a,d)=>a+(+d.desconto||0),0);
   const breakeven=(fat>variavel&&fixo>0)? fixo/(1-(variavel/fat)) : 0;
-  return {rec,desp,fat,custo,fixo,variavel,lucro,margem,n,ticket,breakeven};
+  return {rec,desp,fat,custoServ,custo,fixo,variavel,lucro,margem,n,ticket,descConc,descObt,breakeven};
 }
 
 function vVet(){
   if(!vetAuth) return vetLock();
   const m=curMonth();
-  const tabs=[['painel','Painel'],['receitas','Receitas'],['despesas','Custos'],['contas','Contas a Pagar'],['analise','Margem & Custos']];
+  const tabs=[['painel','Painel'],['receitas','Atendimentos'],['despesas','Custos'],['catalogo','Produtos & Serviços'],['estoque','Estoque'],['contas','Contas a Pagar'],['analise','Margem & Custos']];
   const head=`<div class="vet-head"><div><div class="vet-badge">🐾 Espaço Veterinário · Esther</div><h2>Atendimentos em domicílio</h2></div>
     <button class="btn ghost sm" data-vet-lock>🔒 Bloquear</button></div>
     <div class="scenario-tabs vet-tabs">${tabs.map(([k,l])=>`<button class="${vetTab===k?'active':''}" data-vet-tab="${k}">${l}</button>`).join('')}</div>`;
-  let body = vetTab==='receitas'?vetReceitas(m) : vetTab==='despesas'?vetDespesas(m) : vetTab==='contas'?vetContasView() : vetTab==='analise'?vetAnalise(m) : vetPainel(m);
+  let body = vetTab==='receitas'?vetReceitas(m) : vetTab==='despesas'?vetDespesas(m) : vetTab==='catalogo'?vetCatalogo() : vetTab==='estoque'?vetEstoque() : vetTab==='contas'?vetContasView() : vetTab==='analise'?vetAnalise(m) : vetPainel(m);
   return `<div class="vet-wrap">${head}${body}</div>`;
 }
 function vetLock(){
@@ -1251,21 +1274,22 @@ function vetLock(){
 function vetBars(){
   const ms=vetMeses().slice(-6);
   if(!ms.length) return '<div class="empty">Lance atendimentos e custos para ver o comparativo.</div>';
-  const data=ms.map(m=>({m,r:vetSum(vetRecMes(m)),d:vetSum(vetDespMes(m))}));
+  const data=ms.map(m=>{const k=vetMetrics(m);return {m,r:k.fat,d:k.custo};});
   const max=Math.max(...data.flatMap(x=>[x.r,x.d]),1);
   return `<div class="vsbars">${data.map(x=>`<div class="vsbar-col"><div class="vsbar-pair"><span class="vsbar r" style="height:${Math.max(x.r/max*100,x.r?3:0)}%" title="Receita ${BRL(x.r)}"></span><span class="vsbar d" style="height:${Math.max(x.d/max*100,x.d?3:0)}%" title="Custo ${BRL(x.d)}"></span></div><span class="vsbar-lbl">${MNAMES[+x.m.split('-')[1]-1]}</span></div>`).join('')}</div>
     <div class="vsbars-legend"><span><i style="background:var(--positive)"></i>Receita</span><span><i style="background:var(--critical)"></i>Custo</span></div>`;
 }
 function vetPainel(m){
-  const k=vetMetrics(m), pend=vetContasPend();
+  const k=vetMetrics(m), pend=vetContasPend(), baixo=vetEstoqueBaixo();
   const mc=k.margem>=30?'exc':k.margem>=15?'boa':k.margem>=0?'aten':'crit';
   return `
   <div class="grid g4" style="margin:18px 0">
-    <div class="kpi accent"><div class="lbl">Faturamento · ${mLabel(m)}</div><div class="val">${BRL(k.fat)}</div><div class="sub">${k.n} atendimento(s)</div></div>
-    <div class="kpi"><div class="lbl">Custo operacional</div><div class="val" style="font-size:26px">${BRL(k.custo)}</div><div class="sub">fixo ${BRL(k.fixo)} · variável ${BRL(k.variavel)}</div></div>
+    <div class="kpi accent"><div class="lbl">Faturamento · ${mLabel(m)}</div><div class="val">${BRL(k.fat)}</div><div class="sub">${k.n} atendimento(s) · descontos ${BRL(k.descConc)}</div></div>
+    <div class="kpi"><div class="lbl">Custo operacional</div><div class="val" style="font-size:26px">${BRL(k.custo)}</div><div class="sub">serviços ${BRL(k.custoServ)} · fixo ${BRL(k.fixo)}</div></div>
     <div class="kpi"><div class="lbl">Lucro líquido</div><div class="val" style="font-size:26px;color:${k.lucro>=0?'var(--positive)':'var(--critical)'}">${BRL(k.lucro)}</div><div class="sub">Ticket médio ${BRL(k.ticket)}</div></div>
     <div class="kpi"><div class="lbl">Margem de lucro</div><div class="val" style="font-size:26px">${PCT(k.margem,0)}</div><div class="sub"><span class="chip ${mc}">${rating(mc==='exc'?90:mc==='boa'?70:mc==='aten'?50:20).t}</span></div></div>
   </div>
+  ${baixo.length?`<div class="alert aten" style="margin-bottom:18px"><div class="ai">!</div><div><h4>Estoque baixo — ${baixo.length} item(ns)</h4><p>${baixo.map(e=>`${esc(e.nome)} (${e.qtd} ${esc(e.unidade||'un')})`).join(' · ')}. Reabasteça na aba <b>Estoque</b>.</p></div></div>`:''}
   <div class="grid g2" style="grid-template-columns:1.4fr 1fr;margin-bottom:18px">
     <div class="card"><div class="card-h"><h3>Receita × Custo (6 meses)</h3></div>${vetBars()}</div>
     <div class="card"><div class="card-h"><h3>Contas a pagar</h3><span class="tag">${pend.length}</span></div>
@@ -1275,28 +1299,99 @@ function vetPainel(m){
 }
 function vetReceitas(m){
   const list=vetRecMes(m).sort((a,b)=>b.data.localeCompare(a.data));
-  return `<div class="card" style="margin:18px 0"><div class="card-h"><h3>Atendimentos · ${mLabel(m)}</h3><span class="tag">${BRL(vetSum(list))}</span></div>
-    <table><thead><tr><th>Data</th><th>Tipo de atendimento</th><th>Tutor / Pet</th><th style="text-align:right">Valor</th><th></th></tr></thead>
-    <tbody>${list.length?list.map(r=>`<tr><td style="white-space:nowrap">${fmtData(r.data)}</td><td>${esc(r.cat)}</td><td>${esc(r.desc||'—')}</td><td class="num-cell up">${BRL(r.valor)}</td><td style="width:40px"><button class="icon-btn" data-vet-del-rec="${r.id}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></td></tr>`).join(''):'<tr><td colspan="5" class="empty">Nenhum atendimento neste mês.</td></tr>'}</tbody></table>
+  const fat=list.reduce((a,r)=>a+recLiq(r),0), desc=list.reduce((a,r)=>a+(+r.desconto||0),0);
+  const cat=S.vet.catalogo;
+  const opts=`<option value="">— Avulso / outro —</option>`+cat.map(it=>`<option value="${it.id}" data-preco="${it.preco||0}" data-custo="${vetItemCusto(it)}">${esc(it.nome)} · ${BRL(it.preco||0)}</option>`).join('');
+  return `<div class="card" style="margin:18px 0"><div class="card-h"><h3>Atendimentos · ${mLabel(m)}</h3><span class="tag">Líquido ${BRL(fat)}${desc?` · descontos ${BRL(desc)}`:''}</span></div>
+    <table><thead><tr><th>Data</th><th>Serviço</th><th>Descrição</th><th style="text-align:right">Líquido</th><th style="text-align:right">Custo</th><th></th></tr></thead>
+    <tbody>${list.length?list.map(r=>{const it=r.itemId?vetItem(r.itemId):null; const nome=it?it.nome:(r.cat||'Avulso');
+      return `<tr><td style="white-space:nowrap">${fmtData(r.data)}</td><td>${esc(nome)}${r.tutor?`<span class="row-desc">${esc(r.tutor)}</span>`:''}</td><td>${esc(r.desc||'—')}</td><td class="num-cell up">${BRL(recLiq(r))}<span class="row-desc">bruto ${BRL(r.valor)}${r.desconto?` − desc ${BRL(r.desconto)}`:''}</span></td><td class="num-cell down">${BRL(r.custo||0)}</td><td style="width:40px"><button class="icon-btn" data-vet-del-rec="${r.id}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></td></tr>`;}).join(''):'<tr><td colspan="6" class="empty">Nenhum atendimento neste mês.</td></tr>'}</tbody></table>
     <div class="form-row" style="margin-top:14px">
       <div class="field"><label>Data</label><input type="date" id="vr-data" value="${todayISO()}"></div>
-      <div class="field"><label>Tipo de atendimento</label><select id="vr-cat">${VET_CATS_REC.map(c=>`<option>${c}</option>`).join('')}</select></div>
-      <div class="field"><label>Tutor / Pet</label><input type="text" id="vr-desc" placeholder="Opcional"></div>
+      <div class="field" style="min-width:200px"><label>Serviço / Produto</label><select id="vr-item">${opts}</select></div>
+      <div class="field"><label>Tutor / Pet</label><input type="text" id="vr-tutor" placeholder="Opcional"></div>
+      <div class="field" style="min-width:180px"><label>Descrição (o que foi feito)</label><input type="text" id="vr-desc" placeholder="Opcional"></div>
       <div class="field"><label>Valor R$</label><input type="number" id="vr-val" placeholder="0"></div>
-      <button class="btn" data-vet-add-rec>Lançar</button></div></div>`;
+      <div class="field"><label>Desconto R$</label><input type="number" id="vr-desc-val" placeholder="0"></div>
+      <button class="btn" data-vet-add-rec>Lançar</button></div>
+    <p style="font-size:12px;color:var(--muted);margin-top:10px">Ao escolher um serviço do catálogo, o <b>valor de venda</b> é preenchido automaticamente, o <b>custo é calculado</b> pelos materiais e o <b>estoque é baixado</b> ao lançar. Para itens avulsos, informe o valor manualmente.</p></div>`;
 }
 function vetDespesas(m){
   const list=vetDespMes(m).sort((a,b)=>b.data.localeCompare(a.data));
-  return `<div class="card" style="margin:18px 0"><div class="card-h"><h3>Custos operacionais · ${mLabel(m)}</h3><span class="tag">${BRL(vetSum(list))}</span></div>
+  const tot=list.reduce((a,d)=>a+despLiq(d),0), desc=list.reduce((a,d)=>a+(+d.desconto||0),0);
+  return `<div class="card" style="margin:18px 0"><div class="card-h"><h3>Custos operacionais · ${mLabel(m)}</h3><span class="tag">${BRL(tot)}${desc?` · descontos ${BRL(desc)}`:''}</span></div>
     <table><thead><tr><th>Data</th><th>Categoria</th><th>Tipo</th><th>Descrição</th><th style="text-align:right">Valor</th><th></th></tr></thead>
-    <tbody>${list.length?list.map(d=>`<tr><td style="white-space:nowrap">${fmtData(d.data)}</td><td>${esc(d.cat)}</td><td><span class="chip ${d.tipo==='fixo'?'boa':'aten'}">${d.tipo==='fixo'?'Fixo':'Variável'}</span></td><td>${esc(d.desc||'—')}</td><td class="num-cell down">${BRL(d.valor)}</td><td style="width:40px"><button class="icon-btn" data-vet-del-desp="${d.id}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></td></tr>`).join(''):'<tr><td colspan="6" class="empty">Nenhum custo neste mês.</td></tr>'}</tbody></table>
+    <tbody>${list.length?list.map(d=>`<tr><td style="white-space:nowrap">${fmtData(d.data)}</td><td>${esc(d.cat)}</td><td><span class="chip ${d.tipo==='fixo'?'boa':'aten'}">${d.tipo==='fixo'?'Fixo':'Variável'}</span></td><td>${esc(d.desc||'—')}</td><td class="num-cell down">${BRL(despLiq(d))}${d.desconto?`<span class="row-desc">bruto ${BRL(d.valor)} − desc ${BRL(d.desconto)}</span>`:''}</td><td style="width:40px"><button class="icon-btn" data-vet-del-desp="${d.id}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></td></tr>`).join(''):'<tr><td colspan="6" class="empty">Nenhum custo neste mês.</td></tr>'}</tbody></table>
     <div class="form-row" style="margin-top:14px">
       <div class="field"><label>Data</label><input type="date" id="vd-data" value="${todayISO()}"></div>
       <div class="field"><label>Categoria</label><select id="vd-cat">${VET_CATS_DESP.map(c=>`<option>${c}</option>`).join('')}</select></div>
       <div class="field"><label>Tipo de custo</label><select id="vd-tipo"><option value="variavel">Variável</option><option value="fixo">Fixo</option></select></div>
-      <div class="field"><label>Descrição</label><input type="text" id="vd-desc" placeholder="Opcional"></div>
+      <div class="field" style="min-width:180px"><label>Descrição (o que foi feito)</label><input type="text" id="vd-desc" placeholder="Opcional"></div>
       <div class="field"><label>Valor R$</label><input type="number" id="vd-val" placeholder="0"></div>
+      <div class="field"><label>Desconto R$</label><input type="number" id="vd-desc-val" placeholder="0"></div>
       <button class="btn" data-vet-add-desp>Lançar</button></div></div>`;
+}
+
+/* ---- CATÁLOGO: produtos e serviços ---- */
+function vetCatalogo(){
+  const cat=S.vet.catalogo, est=S.vet.estoque;
+  const matOpts=est.map(e=>`<option value="${e.id}">${esc(e.nome)} (${BRL(e.custoUnit||0)}/${esc(e.unidade||'un')})</option>`).join('');
+  const card=it=>{ const custo=vetItemCusto(it), marg=vetItemMargem(it), mc=marg>=30?'exc':marg>=15?'boa':marg>=0?'aten':'crit';
+    return `<div class="card" style="margin-bottom:14px"><div class="card-h"><span class="chip ${it.tipo==='servico'?'boa':'aten'}">${it.tipo==='servico'?'Serviço':'Produto'}</span><h3 style="font-size:17px">${esc(it.nome)}</h3>
+      <button class="icon-btn" style="margin-left:auto" data-vet-del-item="${it.id}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></div>
+      ${it.descricao?`<p style="font-size:13px;color:var(--ink-soft);margin-bottom:10px">${esc(it.descricao)}</p>`:''}
+      <div class="grid g4" style="gap:10px;margin-bottom:12px">
+        <div class="mini-kpi"><span>${BRL(custo)}</span><small>Custo</small></div>
+        <div class="mini-kpi"><span>${BRL(it.preco||0)}</span><small>Venda</small></div>
+        <div class="mini-kpi"><span>${BRL((it.preco||0)-custo)}</span><small>Lucro</small></div>
+        <div class="mini-kpi ${mc==='exc'?'pos':mc==='crit'?'crit':''}"><span>${PCT(marg,0)}</span><small>Margem</small></div>
+      </div>
+      <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Materiais consumidos (baixa no estoque)</div>
+      ${(it.materiais&&it.materiais.length)?it.materiais.map(mm=>{const e=vetMat(mm.estoqueId);return `<div class="lemb-row" style="padding:7px 2px"><span>${e?esc(e.nome):'(removido)'}</span><span style="margin-left:auto;font-weight:600">${mm.qtd} ${e?esc(e.unidade||'un'):''}</span><button class="icon-btn" data-vet-del-mat="${it.id}|${mm.estoqueId}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg></button></div>`;}).join(''):'<p style="font-size:12.5px;color:var(--muted)">Nenhum material vinculado — custo apenas manual.</p>'}
+      ${est.length?`<div class="form-row" style="margin-top:10px">
+        <div class="field"><label>Adicionar material</label><select data-vet-mat-sel="${it.id}">${matOpts}</select></div>
+        <div class="field"><label>Qtd</label><input type="number" step="0.01" data-vet-mat-qtd="${it.id}" placeholder="1"></div>
+        <button class="btn sm" data-vet-add-mat="${it.id}">Vincular</button></div>`:'<p style="font-size:12px;color:var(--muted);margin-top:8px">Cadastre materiais na aba <b>Estoque</b> para vincular.</p>'}
+    </div>`; };
+  return `
+  <div class="card" style="margin:18px 0"><div class="card-h"><h3>Novo produto ou serviço</h3></div>
+    <div class="form-row">
+      <div class="field"><label>Tipo</label><select id="vi-tipo"><option value="servico">Serviço</option><option value="produto">Produto</option></select></div>
+      <div class="field"><label>Nome</label><input type="text" id="vi-nome" placeholder="Ex.: Consulta domiciliar"></div>
+      <div class="field" style="min-width:180px"><label>Descrição</label><input type="text" id="vi-desc" placeholder="Opcional"></div>
+      <div class="field"><label>Custo manual R$</label><input type="number" id="vi-custo" placeholder="0" title="Custos fixos do serviço fora do estoque (mão de obra, deslocamento...)"></div>
+      <div class="field"><label>Valor de venda R$</label><input type="number" id="vi-preco" placeholder="0"></div>
+      <button class="btn" data-vet-add-item>Cadastrar</button></div>
+    <p style="font-size:12px;color:var(--muted);margin-top:10px">O <b>custo total</b> = custo manual + soma dos materiais vinculados (puxados do estoque). A <b>margem</b> é calculada automaticamente.</p></div>
+  ${cat.length?cat.map(card).join(''):'<div class="empty">Nenhum produto ou serviço cadastrado ainda.</div>'}`;
+}
+
+/* ---- ESTOQUE: vacinas e materiais ---- */
+function vetEstoque(){
+  const est=S.vet.estoque;
+  const totalVal=est.reduce((a,e)=>a+(+e.qtd||0)*(+e.custoUnit||0),0);
+  const linha=e=>{ const baixo=(+e.qtd||0)<=(+e.qtdMin||0);
+    return `<tr class="${baixo?'row-venc':''}"><td>${esc(e.nome)}${baixo?' <span class="cstatus venc">baixo</span>':''}</td><td>${esc(e.tipo||'—')}</td><td class="num-cell">${e.qtd} ${esc(e.unidade||'un')}</td><td class="num-cell">${e.qtdMin||0}</td><td class="num-cell">${BRL(e.custoUnit||0)}</td><td class="num-cell">${BRL((+e.qtd||0)*(+e.custoUnit||0))}</td>
+      <td><div class="est-actions"><input type="number" step="0.01" data-vet-rep-qtd="${e.id}" placeholder="qtd"><button class="btn sm" data-vet-repor="${e.id}" title="Adicionar ao estoque">+ Repor</button>
+      <button class="icon-btn" data-vet-del-mat-est="${e.id}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></div></td></tr>`; };
+  return `
+  <div class="grid g3" style="margin:18px 0">
+    <div class="kpi accent"><div class="lbl">Valor total em estoque</div><div class="val" style="font-size:26px">${BRL(totalVal)}</div></div>
+    <div class="kpi"><div class="lbl">Itens cadastrados</div><div class="val" style="font-size:26px">${est.length}</div></div>
+    <div class="kpi"><div class="lbl">Itens com estoque baixo</div><div class="val" style="font-size:26px;color:${vetEstoqueBaixo().length?'var(--critical)':'var(--ink)'}">${vetEstoqueBaixo().length}</div></div>
+  </div>
+  <div class="card" style="margin-bottom:18px"><div class="card-h"><h3>Estoque de vacinas e materiais</h3><span class="tag">${BRL(totalVal)}</span></div>
+    <table><thead><tr><th>Item</th><th>Tipo</th><th class="num-cell">Em estoque</th><th class="num-cell">Mínimo</th><th class="num-cell">Custo un.</th><th class="num-cell">Total</th><th></th></tr></thead>
+    <tbody>${est.length?est.map(linha).join(''):'<tr><td colspan="7" class="empty">Nenhum material cadastrado.</td></tr>'}</tbody></table></div>
+  <div class="card"><div class="card-h"><h3>Novo material / vacina</h3></div>
+    <div class="form-row">
+      <div class="field"><label>Nome</label><input type="text" id="ve-nome" placeholder="Ex.: Vacina V10"></div>
+      <div class="field"><label>Tipo</label><select id="ve-tipo"><option>Vacina</option><option>Medicamento</option><option>Material</option><option>Insumo</option><option>Outro</option></select></div>
+      <div class="field"><label>Unidade</label><input type="text" id="ve-un" placeholder="un, ml, cx" value="un"></div>
+      <div class="field"><label>Custo unitário R$</label><input type="number" step="0.01" id="ve-custo" placeholder="0"></div>
+      <div class="field"><label>Qtd inicial</label><input type="number" step="0.01" id="ve-qtd" placeholder="0"></div>
+      <div class="field"><label>Estoque mínimo</label><input type="number" step="0.01" id="ve-min" placeholder="0"></div>
+      <button class="btn" data-vet-add-est>Cadastrar</button></div></div>`;
 }
 function vetContasView(){
   const pend=vetContasPend(), pagas=S.vet.contas.filter(c=>c.pago).sort((a,b)=>b.venc.localeCompare(a.venc));
@@ -1343,6 +1438,14 @@ function vetAnalise(m){
     <div class="kpi"><div class="lbl">Ponto de equilíbrio</div><div class="val" style="font-size:24px">${k.breakeven?BRL(k.breakeven):'—'}</div><div class="sub">faturamento p/ cobrir custos</div></div>
     <div class="kpi"><div class="lbl">Custo médio / atendimento</div><div class="val" style="font-size:24px">${BRL(custoMedio)}</div><div class="sub">${k.n} atendimento(s)</div></div>
     <div class="kpi accent"><div class="lbl">Preço sugerido / atendimento</div><div class="val" style="font-size:24px">${precoSug?BRL(precoSug):'—'}</div><div class="sub">p/ margem de ${PCT(alvo,0)}</div></div>
+  </div>
+  <div class="card" style="margin-bottom:18px"><div class="card-h"><h3>Descontos concedidos · ${mLabel(m)}</h3><span class="tag">${k.descConc?PCT(k.descConc/(k.fat+k.descConc)*100,1)+' do bruto':''}</span></div>
+    <div class="grid g3">
+      <div class="kpi" style="background:var(--warn-bg);border:none"><div class="lbl" style="color:var(--warning)">Descontos concedidos</div><div class="val" style="font-size:24px;color:var(--warning)">${BRL(k.descConc)}</div><div class="sub">a clientes este mês</div></div>
+      <div class="kpi"><div class="lbl">Descontos obtidos</div><div class="val" style="font-size:24px">${BRL(k.descObt)}</div><div class="sub">em compras / custos</div></div>
+      <div class="kpi"><div class="lbl">Atendimentos com desconto</div><div class="val" style="font-size:24px">${k.rec.filter(r=>(+r.desconto||0)>0).length}</div><div class="sub">de ${k.n} no total</div></div>
+    </div>
+    ${k.rec.filter(r=>(+r.desconto||0)>0).length?`<table style="margin-top:14px"><thead><tr><th>Data</th><th>Serviço</th><th style="text-align:right">Bruto</th><th style="text-align:right">Desconto</th><th style="text-align:right">Líquido</th></tr></thead><tbody>${k.rec.filter(r=>(+r.desconto||0)>0).sort((a,b)=>b.data.localeCompare(a.data)).map(r=>{const it=r.itemId?vetItem(r.itemId):null;return `<tr><td style="white-space:nowrap">${fmtData(r.data)}</td><td>${esc(it?it.nome:(r.cat||'Avulso'))}</td><td class="num-cell">${BRL(r.valor)}</td><td class="num-cell down">${BRL(r.desconto)}</td><td class="num-cell up">${BRL(recLiq(r))}</td></tr>`;}).join('')}</tbody></table>`:''}
   </div>
   <div class="card"><div class="card-h"><h3>Evolução do lucro mensal</h3></div>${vetLucroLine()}</div>
   <div class="disclaimer" style="margin-top:14px">Indicadores calculados sobre os lançamentos da veterinária. O preço sugerido é uma referência de markup sobre o custo médio por atendimento — ajuste conforme o mercado e o valor percebido pelo cliente.</div>`;
@@ -1416,14 +1519,45 @@ function attachViewEvents(){
   const vrst=c.querySelector('[data-vet-reset]'); if(vrst)vrst.onclick=()=>{ if(confirm('Isso vai APAGAR todos os dados da veterinária e remover a senha. Continuar?')){ S.vet=seedVet(); save(); render(); } };
   const vlk=c.querySelector('[data-vet-lock]'); if(vlk)vlk.onclick=()=>{ vetAuth=false; render(); };
   c.querySelectorAll('[data-vet-tab]').forEach(b=>b.onclick=()=>{ vetTab=b.dataset.vetTab; render(); });
+  // auto-preencher valor ao escolher serviço do catálogo
+  const vrItem=c.querySelector('#vr-item'); if(vrItem)vrItem.onchange=()=>{ const op=vrItem.selectedOptions[0]; const vv=c.querySelector('#vr-val'); if(op&&op.value&&vv&&!vv.value) vv.value=op.dataset.preco||''; };
   const vAddR=c.querySelector('[data-vet-add-rec]'); if(vAddR)vAddR.onclick=()=>{
-    const data=c.querySelector('#vr-data').value, cat=c.querySelector('#vr-cat').value, desc=c.querySelector('#vr-desc').value.trim(), val=+c.querySelector('#vr-val').value;
-    if(!val||!data){alert('Informe data e valor.');return;} S.vet.receitas.push({id:uid(),data,cat,desc,valor:val}); save(); render(); };
-  c.querySelectorAll('[data-vet-del-rec]').forEach(b=>b.onclick=()=>{S.vet.receitas=S.vet.receitas.filter(x=>x.id!==b.dataset.vetDelRec);save();render();});
+    const data=c.querySelector('#vr-data').value, itemId=c.querySelector('#vr-item').value,
+      tutor=c.querySelector('#vr-tutor').value.trim(), desc=c.querySelector('#vr-desc').value.trim(),
+      val=+c.querySelector('#vr-val').value, desconto=+c.querySelector('#vr-desc-val').value||0;
+    if(!val||!data){alert('Informe data e valor.');return;}
+    let custo=0, cat='Avulso', materiais=[];
+    if(itemId){ const it=vetItem(itemId); if(it){ cat=it.nome; custo=vetItemCusto(it); materiais=(it.materiais||[]).map(mm=>({estoqueId:mm.estoqueId,qtd:+mm.qtd||0}));
+      materiais.forEach(mm=>{ const e=vetMat(mm.estoqueId); if(e) e.qtd=(+e.qtd||0)-mm.qtd; }); } }
+    S.vet.receitas.push({id:uid(),data,itemId,cat,tutor,desc,valor:val,desconto,custo,materiais}); save(); render(); };
+  c.querySelectorAll('[data-vet-del-rec]').forEach(b=>b.onclick=()=>{ const r=S.vet.receitas.find(x=>x.id===b.dataset.vetDelRec);
+    if(r&&r.materiais) r.materiais.forEach(mm=>{ const e=vetMat(mm.estoqueId); if(e) e.qtd=(+e.qtd||0)+(+mm.qtd||0); });
+    S.vet.receitas=S.vet.receitas.filter(x=>x.id!==b.dataset.vetDelRec); save(); render(); });
   const vAddD=c.querySelector('[data-vet-add-desp]'); if(vAddD)vAddD.onclick=()=>{
-    const data=c.querySelector('#vd-data').value, cat=c.querySelector('#vd-cat').value, tipo=c.querySelector('#vd-tipo').value, desc=c.querySelector('#vd-desc').value.trim(), val=+c.querySelector('#vd-val').value;
-    if(!val||!data){alert('Informe data e valor.');return;} S.vet.despesas.push({id:uid(),data,cat,tipo,desc,valor:val}); save(); render(); };
+    const data=c.querySelector('#vd-data').value, cat=c.querySelector('#vd-cat').value, tipo=c.querySelector('#vd-tipo').value,
+      desc=c.querySelector('#vd-desc').value.trim(), val=+c.querySelector('#vd-val').value, desconto=+c.querySelector('#vd-desc-val').value||0;
+    if(!val||!data){alert('Informe data e valor.');return;} S.vet.despesas.push({id:uid(),data,cat,tipo,desc,valor:val,desconto}); save(); render(); };
   c.querySelectorAll('[data-vet-del-desp]').forEach(b=>b.onclick=()=>{S.vet.despesas=S.vet.despesas.filter(x=>x.id!==b.dataset.vetDelDesp);save();render();});
+  // catálogo
+  const vAddI=c.querySelector('[data-vet-add-item]'); if(vAddI)vAddI.onclick=()=>{
+    const tipo=c.querySelector('#vi-tipo').value, nome=c.querySelector('#vi-nome').value.trim(), descricao=c.querySelector('#vi-desc').value.trim(),
+      custoManual=+c.querySelector('#vi-custo').value||0, preco=+c.querySelector('#vi-preco').value||0;
+    if(!nome){alert('Informe o nome do produto/serviço.');return;}
+    S.vet.catalogo.push({id:uid(),tipo,nome,descricao,custoManual,preco,materiais:[]}); save(); render(); };
+  c.querySelectorAll('[data-vet-del-item]').forEach(b=>b.onclick=()=>{if(confirm('Excluir este item do catálogo?')){S.vet.catalogo=S.vet.catalogo.filter(x=>x.id!==b.dataset.vetDelItem);save();render();}});
+  c.querySelectorAll('[data-vet-add-mat]').forEach(b=>b.onclick=()=>{ const id=b.dataset.vetAddMat, it=vetItem(id);
+    const estoqueId=c.querySelector(`[data-vet-mat-sel="${id}"]`).value, qtd=+c.querySelector(`[data-vet-mat-qtd="${id}"]`).value||0;
+    if(!estoqueId||!qtd){alert('Selecione o material e a quantidade.');return;}
+    if(!it.materiais)it.materiais=[]; const ex=it.materiais.find(mm=>mm.estoqueId===estoqueId); if(ex)ex.qtd=+ex.qtd+qtd; else it.materiais.push({estoqueId,qtd}); save(); render(); });
+  c.querySelectorAll('[data-vet-del-mat]').forEach(b=>b.onclick=()=>{ const [id,eid]=b.dataset.vetDelMat.split('|'); const it=vetItem(id); if(it)it.materiais=(it.materiais||[]).filter(mm=>mm.estoqueId!==eid); save(); render(); });
+  // estoque
+  const vAddE=c.querySelector('[data-vet-add-est]'); if(vAddE)vAddE.onclick=()=>{
+    const nome=c.querySelector('#ve-nome').value.trim(), tipo=c.querySelector('#ve-tipo').value, unidade=c.querySelector('#ve-un').value.trim()||'un',
+      custoUnit=+c.querySelector('#ve-custo').value||0, qtd=+c.querySelector('#ve-qtd').value||0, qtdMin=+c.querySelector('#ve-min').value||0;
+    if(!nome){alert('Informe o nome do material.');return;}
+    S.vet.estoque.push({id:uid(),nome,tipo,unidade,custoUnit,qtd,qtdMin}); save(); render(); };
+  c.querySelectorAll('[data-vet-repor]').forEach(b=>b.onclick=()=>{ const e=vetMat(b.dataset.vetRepor); const q=+c.querySelector(`[data-vet-rep-qtd="${b.dataset.vetRepor}"]`).value||0; if(e&&q){e.qtd=(+e.qtd||0)+q;save();render();} });
+  c.querySelectorAll('[data-vet-del-mat-est]').forEach(b=>b.onclick=()=>{if(confirm('Excluir este material do estoque?')){S.vet.estoque=S.vet.estoque.filter(x=>x.id!==b.dataset.vetDelMatEst);save();render();}});
   const vAddC=c.querySelector('[data-vet-add-conta]'); if(vAddC)vAddC.onclick=()=>{
     const desc=c.querySelector('#vc-desc').value.trim(), cat=c.querySelector('#vc-cat').value.trim(), val=+c.querySelector('#vc-val').value, venc=c.querySelector('#vc-venc').value;
     if(!val||!venc){alert('Informe valor e vencimento.');return;} if(!desc&&!cat){alert('Informe uma descrição.');return;}
