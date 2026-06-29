@@ -1275,6 +1275,7 @@ function vRelIndiv(p){
 
 /* ============================ VETERINÁRIA (módulo privado da Esther) ============================ */
 let vetAuth=false, vetTab='painel', vetEditItem=null;
+let vetCart={data:'',tutor:'',desc:'',desconto:0,itens:[]};
 function vetHash(str){ let h=5381; for(let i=0;i<str.length;i++){ h=((h<<5)+h+str.charCodeAt(i))>>>0; } return 'v'+h.toString(36); }
 const VET_CATS_REC=['Consulta domiciliar','Vacinação','Exames','Procedimento','Retorno','Banho/Tosa','Outros'];
 const VET_CATS_DESP=['Combustível/Deslocamento','Medicamentos','Insumos/Materiais','Equipamentos','Marketing','Telefone/Internet','Impostos','Outros'];
@@ -1352,25 +1353,51 @@ function vetPainel(m){
     </div>
   </div>`;
 }
+function recItens(r){ if(r.itens&&r.itens.length) return r.itens; const it=r.itemId?vetItem(r.itemId):null; return [{nome:it?it.nome:(r.cat||'Avulso'),qtd:+r.qtd||1,valorUnit:r.valorUnit||r.valor,custoUnit:r.custo}]; }
+function persistCart(){ const c=$('#content'); if(!c)return; const g=s=>c.querySelector(s);
+  if(g('#vr-data'))vetCart.data=g('#vr-data').value;
+  if(g('#vr-tutor'))vetCart.tutor=g('#vr-tutor').value;
+  if(g('#vr-desc'))vetCart.desc=g('#vr-desc').value;
+  if(g('#vr-desc-val'))vetCart.desconto=+g('#vr-desc-val').value||0;
+}
 function vetReceitas(m){
   const list=vetRecMes(m).sort((a,b)=>b.data.localeCompare(a.data));
   const fat=list.reduce((a,r)=>a+recLiq(r),0), desc=list.reduce((a,r)=>a+(+r.desconto||0),0);
   const cat=S.vet.catalogo;
-  const opts=`<option value="">— Avulso / outro —</option>`+cat.map(it=>`<option value="${it.id}" data-preco="${it.preco||0}" data-custo="${vetItemCusto(it)}">${esc(it.nome)} · ${BRL(it.preco||0)}</option>`).join('');
-  return `<div class="card" style="margin:18px 0"><div class="card-h"><h3>Atendimentos · ${mLabel(m)}</h3><span class="tag">Líquido ${BRL(fat)}${desc?` · descontos ${BRL(desc)}`:''}</span></div>
-    <table><thead><tr><th>Data</th><th>Serviço</th><th>Descrição</th><th style="text-align:right">Líquido</th><th style="text-align:right">Custo</th><th></th></tr></thead>
-    <tbody>${list.length?list.map(r=>{const it=r.itemId?vetItem(r.itemId):null; const nome=it?it.nome:(r.cat||'Avulso'); const q=+r.qtd||1;
-      return `<tr><td style="white-space:nowrap">${fmtData(r.data)}</td><td>${esc(nome)}${q>1?` <span class="cstatus prox">${q}×</span>`:''}${r.tutor?`<span class="row-desc">${esc(r.tutor)}</span>`:''}${(q>1&&r.valorUnit)?`<span class="row-desc">${q} × ${BRL(r.valorUnit)}</span>`:''}</td><td>${esc(r.desc||'—')}</td><td class="num-cell up">${BRL(recLiq(r))}<span class="row-desc">bruto ${BRL(r.valor)}${r.desconto?` − desc ${BRL(r.desconto)}`:''}</span></td><td class="num-cell down">${BRL(r.custo||0)}</td><td style="width:40px"><button class="icon-btn" data-vet-del-rec="${r.id}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></td></tr>`;}).join(''):'<tr><td colspan="6" class="empty">Nenhum atendimento neste mês.</td></tr>'}</tbody></table>
-    <div class="form-row" style="margin-top:14px">
-      <div class="field"><label>Data</label><input type="date" id="vr-data" value="${todayISO()}"></div>
-      <div class="field" style="min-width:200px"><label>Serviço / Produto</label><select id="vr-item">${opts}</select></div>
-      <div class="field"><label>Tutor / Pet</label><input type="text" id="vr-tutor" placeholder="Opcional"></div>
-      <div class="field" style="min-width:160px"><label>Descrição (o que foi feito)</label><input type="text" id="vr-desc" placeholder="Opcional"></div>
-      <div class="field" style="max-width:90px"><label>Qtd</label><input type="number" min="1" step="1" id="vr-qtd" value="1"></div>
-      <div class="field"><label>Valor unitário R$</label><input type="number" id="vr-val" placeholder="0"></div>
-      <div class="field"><label>Desconto R$</label><input type="number" id="vr-desc-val" placeholder="0"></div>
-      <button class="btn" data-vet-add-rec>Lançar</button></div>
-    <p style="font-size:12px;color:var(--muted);margin-top:10px">Ao escolher um serviço do catálogo, o <b>valor unitário</b> é preenchido automaticamente. Use a <b>quantidade</b> para lançar o mesmo item várias vezes de uma vez — o total, o custo e a baixa de estoque são multiplicados. Para itens avulsos, informe o valor manualmente.</p></div>`;
+  const opts=`<option value="">— Avulso / outro —</option>`+cat.map(it=>`<option value="${it.id}" data-preco="${it.preco||0}">${esc(it.nome)} · ${BRL(it.preco||0)}</option>`).join('');
+  if(!vetCart.data) vetCart.data=todayISO();
+  const cartBruto=vetCart.itens.reduce((a,i)=>a+i.valorUnit*i.qtd,0), cartLiq=cartBruto-(+vetCart.desconto||0);
+  const rows=list.length?list.map(r=>{ const itens=recItens(r);
+    const label=itens.map(it=>`${esc(it.nome)}${(+it.qtd>1)?` <span class="cstatus prox">${it.qtd}×</span>`:''}`).join(' · ');
+    return `<tr><td style="white-space:nowrap">${fmtData(r.data)}</td><td>${label||'—'}${r.tutor?`<span class="row-desc">${esc(r.tutor)}</span>`:''}</td><td>${esc(r.desc||'—')}</td><td class="num-cell up">${BRL(recLiq(r))}<span class="row-desc">bruto ${BRL(r.valor)}${r.desconto?` − desc ${BRL(r.desconto)}`:''}</span></td><td class="num-cell down">${BRL(r.custo||0)}</td><td style="width:40px"><button class="icon-btn" data-vet-del-rec="${r.id}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></td></tr>`;}).join(''):'<tr><td colspan="6" class="empty">Nenhum atendimento neste mês.</td></tr>';
+  return `
+  <div class="card" style="margin:18px 0"><div class="card-h"><h3>Novo atendimento</h3><span class="tag">vários serviços / produtos por atendimento</span></div>
+    <div class="form-row">
+      <div class="field"><label>Data</label><input type="date" id="vr-data" value="${vetCart.data}"></div>
+      <div class="field"><label>Tutor / Pet</label><input type="text" id="vr-tutor" value="${esc(vetCart.tutor)}" placeholder="Opcional"></div>
+      <div class="field" style="min-width:180px"><label>Descrição (o que foi feito)</label><input type="text" id="vr-desc" value="${esc(vetCart.desc)}" placeholder="Opcional"></div>
+      <div class="field"><label>Desconto total R$</label><input type="number" id="vr-desc-val" value="${vetCart.desconto||''}" placeholder="0"></div>
+    </div>
+    <div style="border-top:1px dashed var(--line);margin:14px 0 0;padding-top:14px">
+      <div class="form-row">
+        <div class="field" style="min-width:200px"><label>Adicionar serviço / produto</label><select id="vr-item">${opts}</select></div>
+        <div class="field" style="max-width:90px"><label>Qtd</label><input type="number" min="1" step="1" id="vr-qtd" value="1"></div>
+        <div class="field"><label>Valor unitário R$</label><input type="number" id="vr-val" placeholder="auto"></div>
+        <button class="btn ghost" data-vet-cart-add>+ Adicionar item</button>
+      </div>
+    </div>
+    ${vetCart.itens.length?`<table style="margin-top:14px"><thead><tr><th>Item</th><th class="num-cell">Qtd</th><th class="num-cell">Unitário</th><th class="num-cell">Subtotal</th><th></th></tr></thead><tbody>
+      ${vetCart.itens.map((i,idx)=>`<tr><td>${esc(i.nome)}</td><td class="num-cell">${i.qtd}</td><td class="num-cell">${BRL(i.valorUnit)}</td><td class="num-cell">${BRL(i.valorUnit*i.qtd)}</td><td style="width:36px"><button class="icon-btn" data-vet-cart-del="${idx}" title="Remover"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg></button></td></tr>`).join('')}
+      </tbody></table>
+      <div style="display:flex;justify-content:flex-end;gap:16px;align-items:center;margin-top:14px;flex-wrap:wrap">
+        <span style="font-size:13px;color:var(--ink-soft)">Bruto <b>${BRL(cartBruto)}</b>${vetCart.desconto?` · desconto ${BRL(vetCart.desconto)}`:''} · Líquido <b>${BRL(cartLiq)}</b></span>
+        <button class="btn ghost sm" data-vet-cart-clear>Limpar</button>
+        <button class="btn" data-vet-finalizar>Finalizar atendimento</button></div>`
+      :'<p style="font-size:12.5px;color:var(--muted);margin-top:10px">Adicione um ou mais itens (serviços e/ou produtos) e clique em <b>Finalizar atendimento</b>. Ao escolher um item do catálogo, o valor unitário é preenchido sozinho.</p>'}
+  </div>
+  <div class="card" style="margin-bottom:18px"><div class="card-h"><h3>Atendimentos · ${mLabel(m)}</h3><span class="tag">Líquido ${BRL(fat)}${desc?` · descontos ${BRL(desc)}`:''}</span></div>
+    <table><thead><tr><th>Data</th><th>Itens</th><th>Descrição</th><th style="text-align:right">Líquido</th><th style="text-align:right">Custo</th><th></th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
 }
 function vetDespesas(m){
   const list=vetDespMes(m).sort((a,b)=>b.data.localeCompare(a.data));
@@ -1588,18 +1615,28 @@ function attachViewEvents(){
   const vrst=c.querySelector('[data-vet-reset]'); if(vrst)vrst.onclick=()=>{ if(confirm('Isso vai APAGAR todos os dados da veterinária e remover a senha. Continuar?')){ S.vet=seedVet(); save(); render(); } };
   const vlk=c.querySelector('[data-vet-lock]'); if(vlk)vlk.onclick=()=>{ vetAuth=false; render(); };
   c.querySelectorAll('[data-vet-tab]').forEach(b=>b.onclick=()=>{ vetTab=b.dataset.vetTab; vetEditItem=null; render(); });
-  // auto-preencher valor ao escolher serviço do catálogo
+  // auto-preencher valor unitário ao escolher serviço do catálogo
   const vrItem=c.querySelector('#vr-item'); if(vrItem)vrItem.onchange=()=>{ const op=vrItem.selectedOptions[0]; const vv=c.querySelector('#vr-val'); if(op&&op.value&&vv&&!vv.value) vv.value=op.dataset.preco||''; };
-  const vAddR=c.querySelector('[data-vet-add-rec]'); if(vAddR)vAddR.onclick=()=>{
-    const data=c.querySelector('#vr-data').value, itemId=c.querySelector('#vr-item').value,
-      tutor=c.querySelector('#vr-tutor').value.trim(), desc=c.querySelector('#vr-desc').value.trim(),
-      qtd=Math.max(1,Math.round(+c.querySelector('#vr-qtd').value||1)),
-      valUnit=+c.querySelector('#vr-val').value, desconto=+c.querySelector('#vr-desc-val').value||0;
-    if(!valUnit||!data){alert('Informe data e valor.');return;}
-    let custoUnit=0, cat='Avulso', materiais=[];
-    if(itemId){ const it=vetItem(itemId); if(it){ cat=it.nome; custoUnit=vetItemCusto(it); materiais=(it.materiais||[]).map(mm=>({estoqueId:mm.estoqueId,qtd:(+mm.qtd||0)*qtd}));
-      materiais.forEach(mm=>{ const e=vetMat(mm.estoqueId); if(e) e.qtd=(+e.qtd||0)-mm.qtd; }); } }
-    S.vet.receitas.push({id:uid(),data,itemId,cat,tutor,desc,qtd,valorUnit:valUnit,valor:valUnit*qtd,desconto,custo:custoUnit*qtd,materiais}); save(); render(); };
+  const vCartAdd=c.querySelector('[data-vet-cart-add]'); if(vCartAdd)vCartAdd.onclick=()=>{
+    persistCart();
+    const itemId=c.querySelector('#vr-item').value, qtd=Math.max(1,Math.round(+c.querySelector('#vr-qtd').value||1));
+    let valUnit=+c.querySelector('#vr-val').value, nome='Avulso', custoUnit=0, mats=[];
+    if(itemId){ const it=vetItem(itemId); if(it){ nome=it.nome; custoUnit=vetItemCusto(it); mats=(it.materiais||[]).map(mm=>({estoqueId:mm.estoqueId,qtd:+mm.qtd||0})); if(!valUnit) valUnit=+it.preco||0; } }
+    if(!valUnit){alert('Informe o valor unitário (ou escolha um item do catálogo com preço).');return;}
+    vetCart.itens.push({itemId,nome,qtd,valorUnit:valUnit,custoUnit,mats}); render(); };
+  c.querySelectorAll('[data-vet-cart-del]').forEach(b=>b.onclick=()=>{ persistCart(); vetCart.itens.splice(+b.dataset.vetCartDel,1); render(); });
+  const vCartClear=c.querySelector('[data-vet-cart-clear]'); if(vCartClear)vCartClear.onclick=()=>{ vetCart={data:todayISO(),tutor:'',desc:'',desconto:0,itens:[]}; render(); };
+  const vFinal=c.querySelector('[data-vet-finalizar]'); if(vFinal)vFinal.onclick=()=>{
+    persistCart();
+    if(!vetCart.itens.length){alert('Adicione ao menos um item ao atendimento.');return;}
+    if(!vetCart.data){alert('Informe a data do atendimento.');return;}
+    const valor=vetCart.itens.reduce((a,i)=>a+i.valorUnit*i.qtd,0), custo=vetCart.itens.reduce((a,i)=>a+i.custoUnit*i.qtd,0);
+    const agg={}; vetCart.itens.forEach(i=>(i.mats||[]).forEach(mm=>{ agg[mm.estoqueId]=(agg[mm.estoqueId]||0)+mm.qtd*i.qtd; }));
+    const materiais=Object.entries(agg).map(([estoqueId,qtd])=>({estoqueId,qtd}));
+    materiais.forEach(mm=>{ const e=vetMat(mm.estoqueId); if(e) e.qtd=(+e.qtd||0)-mm.qtd; });
+    const itens=vetCart.itens.map(i=>({itemId:i.itemId,nome:i.nome,qtd:i.qtd,valorUnit:i.valorUnit,custoUnit:i.custoUnit}));
+    S.vet.receitas.push({id:uid(),data:vetCart.data,tutor:(vetCart.tutor||'').trim(),desc:(vetCart.desc||'').trim(),desconto:+vetCart.desconto||0,valor,custo,itens,materiais});
+    vetCart={data:todayISO(),tutor:'',desc:'',desconto:0,itens:[]}; save(); render(); };
   c.querySelectorAll('[data-vet-del-rec]').forEach(b=>b.onclick=()=>{ const r=S.vet.receitas.find(x=>x.id===b.dataset.vetDelRec);
     if(r&&r.materiais) r.materiais.forEach(mm=>{ const e=vetMat(mm.estoqueId); if(e) e.qtd=(+e.qtd||0)+(+mm.qtd||0); });
     S.vet.receitas=S.vet.receitas.filter(x=>x.id!==b.dataset.vetDelRec); save(); render(); });
