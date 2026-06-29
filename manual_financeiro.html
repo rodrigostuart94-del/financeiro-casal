@@ -1359,17 +1359,18 @@ function vetReceitas(m){
   const opts=`<option value="">— Avulso / outro —</option>`+cat.map(it=>`<option value="${it.id}" data-preco="${it.preco||0}" data-custo="${vetItemCusto(it)}">${esc(it.nome)} · ${BRL(it.preco||0)}</option>`).join('');
   return `<div class="card" style="margin:18px 0"><div class="card-h"><h3>Atendimentos · ${mLabel(m)}</h3><span class="tag">Líquido ${BRL(fat)}${desc?` · descontos ${BRL(desc)}`:''}</span></div>
     <table><thead><tr><th>Data</th><th>Serviço</th><th>Descrição</th><th style="text-align:right">Líquido</th><th style="text-align:right">Custo</th><th></th></tr></thead>
-    <tbody>${list.length?list.map(r=>{const it=r.itemId?vetItem(r.itemId):null; const nome=it?it.nome:(r.cat||'Avulso');
-      return `<tr><td style="white-space:nowrap">${fmtData(r.data)}</td><td>${esc(nome)}${r.tutor?`<span class="row-desc">${esc(r.tutor)}</span>`:''}</td><td>${esc(r.desc||'—')}</td><td class="num-cell up">${BRL(recLiq(r))}<span class="row-desc">bruto ${BRL(r.valor)}${r.desconto?` − desc ${BRL(r.desconto)}`:''}</span></td><td class="num-cell down">${BRL(r.custo||0)}</td><td style="width:40px"><button class="icon-btn" data-vet-del-rec="${r.id}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></td></tr>`;}).join(''):'<tr><td colspan="6" class="empty">Nenhum atendimento neste mês.</td></tr>'}</tbody></table>
+    <tbody>${list.length?list.map(r=>{const it=r.itemId?vetItem(r.itemId):null; const nome=it?it.nome:(r.cat||'Avulso'); const q=+r.qtd||1;
+      return `<tr><td style="white-space:nowrap">${fmtData(r.data)}</td><td>${esc(nome)}${q>1?` <span class="cstatus prox">${q}×</span>`:''}${r.tutor?`<span class="row-desc">${esc(r.tutor)}</span>`:''}${(q>1&&r.valorUnit)?`<span class="row-desc">${q} × ${BRL(r.valorUnit)}</span>`:''}</td><td>${esc(r.desc||'—')}</td><td class="num-cell up">${BRL(recLiq(r))}<span class="row-desc">bruto ${BRL(r.valor)}${r.desconto?` − desc ${BRL(r.desconto)}`:''}</span></td><td class="num-cell down">${BRL(r.custo||0)}</td><td style="width:40px"><button class="icon-btn" data-vet-del-rec="${r.id}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></td></tr>`;}).join(''):'<tr><td colspan="6" class="empty">Nenhum atendimento neste mês.</td></tr>'}</tbody></table>
     <div class="form-row" style="margin-top:14px">
       <div class="field"><label>Data</label><input type="date" id="vr-data" value="${todayISO()}"></div>
       <div class="field" style="min-width:200px"><label>Serviço / Produto</label><select id="vr-item">${opts}</select></div>
       <div class="field"><label>Tutor / Pet</label><input type="text" id="vr-tutor" placeholder="Opcional"></div>
-      <div class="field" style="min-width:180px"><label>Descrição (o que foi feito)</label><input type="text" id="vr-desc" placeholder="Opcional"></div>
-      <div class="field"><label>Valor R$</label><input type="number" id="vr-val" placeholder="0"></div>
+      <div class="field" style="min-width:160px"><label>Descrição (o que foi feito)</label><input type="text" id="vr-desc" placeholder="Opcional"></div>
+      <div class="field" style="max-width:90px"><label>Qtd</label><input type="number" min="1" step="1" id="vr-qtd" value="1"></div>
+      <div class="field"><label>Valor unitário R$</label><input type="number" id="vr-val" placeholder="0"></div>
       <div class="field"><label>Desconto R$</label><input type="number" id="vr-desc-val" placeholder="0"></div>
       <button class="btn" data-vet-add-rec>Lançar</button></div>
-    <p style="font-size:12px;color:var(--muted);margin-top:10px">Ao escolher um serviço do catálogo, o <b>valor de venda</b> é preenchido automaticamente, o <b>custo é calculado</b> pelos materiais e o <b>estoque é baixado</b> ao lançar. Para itens avulsos, informe o valor manualmente.</p></div>`;
+    <p style="font-size:12px;color:var(--muted);margin-top:10px">Ao escolher um serviço do catálogo, o <b>valor unitário</b> é preenchido automaticamente. Use a <b>quantidade</b> para lançar o mesmo item várias vezes de uma vez — o total, o custo e a baixa de estoque são multiplicados. Para itens avulsos, informe o valor manualmente.</p></div>`;
 }
 function vetDespesas(m){
   const list=vetDespMes(m).sort((a,b)=>b.data.localeCompare(a.data));
@@ -1592,12 +1593,13 @@ function attachViewEvents(){
   const vAddR=c.querySelector('[data-vet-add-rec]'); if(vAddR)vAddR.onclick=()=>{
     const data=c.querySelector('#vr-data').value, itemId=c.querySelector('#vr-item').value,
       tutor=c.querySelector('#vr-tutor').value.trim(), desc=c.querySelector('#vr-desc').value.trim(),
-      val=+c.querySelector('#vr-val').value, desconto=+c.querySelector('#vr-desc-val').value||0;
-    if(!val||!data){alert('Informe data e valor.');return;}
-    let custo=0, cat='Avulso', materiais=[];
-    if(itemId){ const it=vetItem(itemId); if(it){ cat=it.nome; custo=vetItemCusto(it); materiais=(it.materiais||[]).map(mm=>({estoqueId:mm.estoqueId,qtd:+mm.qtd||0}));
+      qtd=Math.max(1,Math.round(+c.querySelector('#vr-qtd').value||1)),
+      valUnit=+c.querySelector('#vr-val').value, desconto=+c.querySelector('#vr-desc-val').value||0;
+    if(!valUnit||!data){alert('Informe data e valor.');return;}
+    let custoUnit=0, cat='Avulso', materiais=[];
+    if(itemId){ const it=vetItem(itemId); if(it){ cat=it.nome; custoUnit=vetItemCusto(it); materiais=(it.materiais||[]).map(mm=>({estoqueId:mm.estoqueId,qtd:(+mm.qtd||0)*qtd}));
       materiais.forEach(mm=>{ const e=vetMat(mm.estoqueId); if(e) e.qtd=(+e.qtd||0)-mm.qtd; }); } }
-    S.vet.receitas.push({id:uid(),data,itemId,cat,tutor,desc,valor:val,desconto,custo,materiais}); save(); render(); };
+    S.vet.receitas.push({id:uid(),data,itemId,cat,tutor,desc,qtd,valorUnit:valUnit,valor:valUnit*qtd,desconto,custo:custoUnit*qtd,materiais}); save(); render(); };
   c.querySelectorAll('[data-vet-del-rec]').forEach(b=>b.onclick=()=>{ const r=S.vet.receitas.find(x=>x.id===b.dataset.vetDelRec);
     if(r&&r.materiais) r.materiais.forEach(mm=>{ const e=vetMat(mm.estoqueId); if(e) e.qtd=(+e.qtd||0)+(+mm.qtd||0); });
     S.vet.receitas=S.vet.receitas.filter(x=>x.id!==b.dataset.vetDelRec); save(); render(); });
